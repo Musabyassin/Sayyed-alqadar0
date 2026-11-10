@@ -27,6 +27,27 @@ function ans(v) {
   setTimeout(() => { if (sentSeq === p.seq) { sentSeq = null; App.render(); } }, 900);
 }
 
+/* رمي النرد بهزّ الهاتف (اختياري من الإعدادات): يعمل فقط عندما يحين طلب الرمي فعلاً */
+let lastAcc = null, lastShakeAt = 0;
+window.addEventListener('devicemotion', (e) => {
+  if (!App.st || App.store.get('sa_shake') !== '1') return;
+  const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+  const now = Date.now();
+  if (lastAcc) {
+    const d = Math.abs(a.x - lastAcc.x) + Math.abs(a.y - lastAcc.y) + Math.abs(a.z - lastAcc.z);
+    if (d > 55 && now - lastShakeAt > 1000) {
+      lastShakeAt = now;
+      const st = App.st;
+      if (st.prompt && st.prompt.kind === 'roll' && st.s.cur === st.me && !st.s.over) {
+        try { if (App.store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(60); } catch (err) { /* ignore */ }
+        ans('roll');
+      }
+    }
+  }
+  lastAcc = { x: a.x, y: a.y, z: a.z };
+});
+window.addEventListener('resize', () => { fitBoard(); });
+
 /* ----- أقسام العرض ----- */
 function propsHTML(st, withHint) {
   const S = st.s, can = !!st.prompt;
@@ -95,26 +116,37 @@ function tradeView(st) {
 function playersStrip(st) {
   const S = st.s;
   const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h} بيوت)` : ''}`; };
-  return `<div class="pstrip">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · في السجن' : ''}<span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `أملاكه (${own.length}): ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
+  return `<div class="pstrip mini">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `(${own.length}) ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
 function boardView(st) {
-  return `<div class="boardwrap">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:10px 0 8px;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'تصغير اللوحة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:13px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار الكاملة.</span></div><div style="overflow:auto;border-radius:14px"><div id="bd"></div></div></div>`;
+  return `<div class="boardwrap ${App.zoom ? '' : 'fit'}"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
 }
 function paintBoard(S) {
   const cur = S.players[S.cur];
-  $('#bd').style.width = App.zoom ? '820px' : '';
   Board.render($('#bd'), S, `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}<div class="msg">${esc(S.log[0] || '')}</div>`);
+  fitBoard();
+}
+/* مقاس الشاشة: اللوحة وبقية العناصر داخل ارتفاع الشاشة تماماً بلا تمرير للصفحة */
+function fitBoard() {
+  const wrap = $('.boardwrap'), bd = $('#bd'); if (!wrap || !bd) return;
+  const box = bd.parentElement;
+  if (!wrap.classList.contains('fit')) { wrap.style.height = ''; bd.style.width = App.zoom ? '820px' : ''; return; }
+  const hdr = $('#hdr'), tabs = $('#tabs');
+  const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (tabs && !tabs.hidden ? tabs.offsetHeight : 0) - 2;
+  wrap.style.height = Math.max(190, avail) + 'px';
+  bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px';
 }
 function logView(S) { return `<div class="card"><div class="log">${S.log.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>`; }
 
 /* ----- الإعدادات ----- */
 function settingsView(st) {
-  const snd = App.store.get('sa_mute') !== '1', vib = App.store.get('sa_vib') !== '0';
+  const snd = App.store.get('sa_mute') !== '1', vib = App.store.get('sa_vib') !== '0', shk = App.store.get('sa_shake') === '1';
   const spd = App.speedV || 'normal';
   return `<div class="card"><b>إعدادات اللعبة</b>
   <div class="opts" style="display:grid;gap:12px">
     <label><input type="checkbox" id="set-snd" ${snd ? 'checked' : ''}> المؤثرات الصوتية</label>
     <label><input type="checkbox" id="set-vib" ${vib ? 'checked' : ''}> اهتزاز الهاتف عند حلول دوري</label>
+    <label><input type="checkbox" id="set-shake" ${shk ? 'checked' : ''}> رمي النرد بهزّ الهاتف — هزّ هاتفك عندما يحين رميك</label>
   </div>
   ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="slow" ${spd === 'slow' ? 'selected' : ''}>بطيئة</option><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
   <div class="muted" style="font-size:13px">الرصيد الابتدائي وجائزة الوقوف المجاني يضبطهما المضيف من الردهة قبل بدء اللعبة.</div>
@@ -203,6 +235,15 @@ function onViewChange(e) {
   const t = e.target;
   if (t.id === 'set-snd') { App.store.set('sa_mute', t.checked ? '0' : '1'); Sfx.setMuted(!t.checked); return; }
   if (t.id === 'set-vib') { App.store.set('sa_vib', t.checked ? '1' : '0'); return; }
+  if (t.id === 'set-shake') {
+    if (t.checked && typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then((r) => {
+        if (r === 'granted') { App.store.set('sa_shake', '1'); toast('هزّ الهاتف مفعّل'); }
+        else { t.checked = false; App.store.set('sa_shake', '0'); toast('يلزم السماح بحسّاس الحركة من المتصفح'); }
+      }).catch(() => { t.checked = false; });
+    } else App.store.set('sa_shake', t.checked ? '1' : '0');
+    return;
+  }
   if (t.id === 'set-speed') { App.speedV = t.value; App.store.set('sa_speed', t.value); send({ t: 'speed', v: t.value }); return; }
   if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); App.render(); }
   else if (t.dataset.give !== undefined) { (t.checked ? tf.give.add(+t.dataset.give) : tf.give.delete(+t.dataset.give)); }
