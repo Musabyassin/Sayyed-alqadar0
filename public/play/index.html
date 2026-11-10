@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>سيد العقار | وحدة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap">
+<link rel="stylesheet" href="../shared/board.css">
+<style>
+/* الهاتف: عمود واحد، أزرار كبيرة، وشريط تبويبات سفلي */
+body{max-width:560px;margin:0 auto;font-size:15px;line-height:1.6;
+  padding-block:0 calc(78px + env(safe-area-inset-bottom,0px));
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0}
+.btn{min-height:52px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;width:100%}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;font-weight:700}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.sm{min-height:38px;font-size:13px;padding:0 10px;border-radius:10px;width:auto}
+.btn.big{min-height:72px;font-size:22px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>.btn{flex:1 1 120px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px;margin-top:12px}
+.muted{color:var(--muted)}
+input[type=text],input[type=number],select{width:100%;height:50px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 14px;font-size:17px}
+label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
+.codein{font-family:var(--f-display);font-size:34px!important;letter-spacing:.3em;text-align:center;direction:ltr}
+/* الانضمام والردهة */
+.join{padding-top:6vh;display:grid;gap:6px}
+.join h1{font-family:var(--f-display);font-size:56px;color:var(--accent);line-height:1.1}
+.bigcode{font-family:var(--f-display);font-size:64px;letter-spacing:.18em;text-align:center;color:var(--accent);direction:ltr;line-height:1.1}
+.plist{display:grid;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);font-weight:600}
+.pitem .pawn{width:20px;height:20px}.pitem small{margin-inline-start:auto;color:var(--muted);font-weight:400}
+.opts{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.opts label{display:flex;gap:8px;align-items:center}
+.opts input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.opts select{width:auto;height:44px}
+/* اللعب */
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 0 10px;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .pawn{width:22px;height:22px}
+.top b{font-size:17px}
+.top .money{margin-inline-start:auto;font-family:var(--f-display);font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}
+.top .code{font-size:12px;color:var(--muted);direction:ltr}
+.turnbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:var(--surface2);font-weight:600;margin-top:12px}
+.turnbar.mine{background:var(--accent);color:var(--accent-fg)}
+.status{text-align:center;padding:18px 8px;display:grid;gap:10px;justify-items:center}
+.status .dice{--s:1}
+.status .die{width:54px;height:54px;padding:7px;border-radius:10px}
+.focus-note{padding:10px 12px;border-radius:12px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-weight:600}
+.bidbox{text-align:center}.bidbox .n{font-family:var(--f-display);font-size:56px;color:var(--accent);line-height:1}
+.deedwrap{max-width:340px;margin:0 auto;width:100%;container-type:inline-size}
+.deedwrap .deed .dh b{font-size:20px}.deedwrap .rt{font-size:13px}.deedwrap .rt td{padding:3px 12px}.deedwrap .dh small,.deedwrap .dn{font-size:12px}
+.prop{display:grid;gap:8px;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.prop .h{display:flex;align-items:center;gap:8px;font-weight:600}
+.prop .chip{width:16px;height:16px;border-radius:4px;flex:none}
+.prop .st{margin-inline-start:auto;font-size:12px;color:var(--muted);font-weight:400}
+.prop .bt{display:flex;gap:6px;flex-wrap:wrap}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:420px){.tg{grid-template-columns:1fr}}
+.tcol{display:grid;gap:6px;align-content:start}
+.pk{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14px}
+.pk input{width:20px;height:20px;accent-color:var(--accent)}
+.log{display:grid;gap:4px;color:var(--muted);font-size:14px}.log div:first-child{color:var(--ink);font-weight:600}
+.boardwrap .center .ctitle{font-size:5cqw}
+/* شريط اللاعبين فوق اللوحة: نقود وأملاك الجميع */
+.pstrip{display:grid;gap:8px;margin-bottom:10px}
+.pcard{padding:9px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.pcard.cur{border-color:var(--accent)}
+.pcard .ph{display:flex;align-items:center;gap:8px;font-weight:700}
+.pcard .ph .pawn{width:18px;height:18px}
+.pcard .ph .money{margin-inline-start:auto;color:var(--accent);font-variant-numeric:tabular-nums;font-size:17px}
+.pcard .pn{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:3px}
+/* أزرار اللوحة الرئيسية على الهاتف */
+#bacts{display:grid;gap:8px;margin-bottom:10px}
+#bacts:empty{display:none}
+/* الشات */
+.cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
+.cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
+.cm2.mine{border-color:var(--accent)}
+.cm2 b{margin-inline-end:6px}
+.crow{display:flex;gap:8px;margin-top:10px}
+.crow input{flex:1}
+.crow .btn{width:auto;flex:none;padding:0 20px}
+.tabs{position:fixed;inset-inline:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);max-width:560px;margin:0 auto}
+.tabs button{min-height:62px;background:none;border:0;color:var(--muted);font-size:13px;font-weight:600;display:grid;gap:2px;justify-items:center;align-content:center;cursor:pointer}
+.tabs button svg{width:22px;height:22px}
+.tabs button[aria-selected="true"]{color:var(--accent)}
+.tabs button .dot{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-top:-30px;margin-inline-start:22px}
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,10,20,.75);display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet{width:min(460px,100%);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:12px;box-shadow:var(--shadow)}
+.sheet h2{font-family:var(--f-display);color:var(--accent)}
+#toasts{position:fixed;inset-inline:0;top:calc(70px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
+.toast{background:var(--accent);color:var(--accent-fg);padding:8px 16px;border-radius:99px;font-size:14px;font-weight:700;box-shadow:var(--shadow);max-width:92vw}
+#conn{position:fixed;top:0;inset-inline:0;z-index:70;background:var(--bad);color:#fff;text-align:center;padding:calc(6px + env(safe-area-inset-top,0px)) 8px 6px;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<div id="conn" hidden>انقطع الاتصال، جارٍ إعادة المحاولة...</div>
+<main id="root"></main>
+<nav class="tabs" id="tabs" hidden></nav>
+<div id="modal" class="overlay" hidden></div>
+<div id="toasts"></div>
+<script src="../shared/data.js"></script>
+<script src="../shared/board.js"></script>
+<script src="../shared/net.js"></script>
+<script src="play.js"></script>
+<script src="play-game.js"></script>
+</body>
+</html>
