@@ -189,6 +189,15 @@ wss.on('connection', (ws, req) => {
     const g = room.game;
     switch (msg.t) {
       case 'chat': {
+        /* كلمة الشات السرية: كتابة «قصب» وحدها لا تظهر لأحد (لا بث ولا سجل)،
+           وتضيف 500 لكاتبها فقط أثناء اللعبة، مع تنبيه خاص يصله وحده. */
+        if (String(msg.m || '').trim() === 'قصب') {
+          const idx = room.members.indexOf(m), gg = room.game;
+          let added = false;
+          if (gg && room.phase === 'playing') { const p = gg.S.players[idx]; if (p && !p.bankrupt) { p.money += 500; added = true; schedule(room); } }
+          send(ws, { t: 'ev', e: { e: 'toast', m: added ? '🌿 +500 لك' : '🌿 تعمل أثناء اللعبة فقط' } });
+          return;
+        }
         const text = String(msg.m || '').replace(/\s+/g, ' ').trim().slice(0, 300);
         if (!text) return;
         const now = Date.now(), lastAt = room.chatAt.get(m) || 0;
