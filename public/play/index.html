@@ -65,15 +65,16 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 .log{display:grid;gap:4px;color:var(--muted);font-size:14px}.log div:first-child{color:var(--ink);font-weight:600}
 .boardwrap .center .ctitle{font-size:5cqw}
 /* شريط اللاعبين فوق اللوحة: نقود وأملاك الجميع */
-.pstrip{display:grid;gap:8px;margin-bottom:10px}
-.pcard{padding:9px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.pstrip{display:grid;gap:5px;margin:8px 0 0}
+.pcard{padding:5px 9px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
 .pcard.cur{border-color:var(--accent)}
-.pcard .ph{display:flex;align-items:center;gap:8px;font-weight:700}
-.pcard .ph .pawn{width:18px;height:18px}
-.pcard .ph .money{margin-inline-start:auto;color:var(--accent);font-variant-numeric:tabular-nums;font-size:17px}
-.pcard .pn{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:3px}
-/* منطقة القرارات أعلى اللوحة على الهاتف */
-.boardwrap>.turnbar,.boardwrap>.card:first-of-type{margin-bottom:2px}
+.pcard .ph{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;line-height:1.3}
+.pcard .ph .pawn{width:14px;height:14px;border-width:1.5px}
+.pcard .ph .money{margin-inline-start:auto;color:var(--accent);font-variant-numeric:tabular-nums;font-size:14.5px}
+.pcard .pn{font-size:11px;color:var(--muted);line-height:1.35;margin-top:1px}
+/* منطقة القرارات أسفل بطاقات المعلومات على الهاتف */
+.boardwrap>.card{margin-top:8px;padding:10px}
+.boardwrap>.turnbar{margin-top:10px}
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
