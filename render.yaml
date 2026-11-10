@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: sayyed-alaqar
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
