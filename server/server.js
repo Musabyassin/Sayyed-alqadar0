@@ -52,7 +52,7 @@ function newCode() { for (let i = 0; i < 50; i++) { const c = String(1000 + Math
 function newRoom() {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = newCode(); if (!code) return null;
-  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1 }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map() };
+  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1.6 }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map() };
   rooms.set(code, room); return room;
 }
 const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
@@ -209,7 +209,7 @@ wss.on('connection', (ws, req) => {
         return;
       }
       case 'cfg': if (m.host && room.phase === 'lobby') { room.cfg.cash = [1000, 1500, 2000, 3000].includes(msg.cash) ? msg.cash : 1500; room.cfg.jackpot = !!msg.jackpot; broadcast(room); } return;
-      case 'speed': if (m.host) { room.cfg.speed = msg.v === 'fast' ? 0.35 : msg.v === 'turbo' ? 0 : 1; if (g) g.speed = room.cfg.speed; broadcast(room); } return;
+      case 'speed': if (m.host) { room.cfg.speed = msg.v === 'slow' ? 2.6 : msg.v === 'fast' ? 0.8 : msg.v === 'turbo' ? 0 : 1.6; if (g) g.speed = room.cfg.speed; broadcast(room); } return;
       case 'addBot': if (m.host && room.phase === 'lobby' && room.members.length < 6) { const used = new Set(room.members.map((x) => x.name)); const nm = NAMES.find((x) => !used.has(x)) || 'آلي ' + room.members.length; room.members.push({ name: nm, bot: true, ws: null }); broadcast(room); } return;
       case 'kick': if (m.host && room.phase === 'lobby') { const t = room.members[Number(msg.id)]; if (t && t !== m) { room.members.splice(room.members.indexOf(t), 1); if (t.ws) { send(t.ws, { t: 'kicked' }); t.ws.room = null; t.ws.member = null; } broadcast(room); } } return;
       case 'start': if (m.host && room.phase === 'lobby' && room.members.length >= 2) startGame(room); return;
