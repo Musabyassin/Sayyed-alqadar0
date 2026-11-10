@@ -43,21 +43,27 @@ function propsHTML(st, withHint) {
 function standingsHTML(S) {
   return `<div class="plist">${S.standings.map((r) => `<div class="pitem"><span class="pawn" style="background:${S.players[r.id].color}"></span>${esc(S.players[r.id].name)}${r.bankrupt ? ' (مفلس)' : ''}<small>${fmt(r.worth)}</small></div>`).join('')}</div>`;
 }
-/* منطقة القرارات أعلى اللوحة: رمي، شراء، مزاد، سجن، دين، إنهاء — حلت محل تبويب «إجراء» المحذوف */
-function promptView(st) {
-  const S = st.s, me = S.players[st.me], p = st.prompt, cur = S.players[S.cur], f = S.focus;
-  const mine = S.cur === st.me && !S.over;
+/* شريط الدور الصغير أعلى تبويب اللوحة */
+function turnbarHTML(st) {
+  const S = st.s, me = S.players[st.me], cur = S.players[S.cur], f = S.focus;
+  if (S.over || me.bankrupt) return '';
+  const mine = S.cur === st.me;
+  let h = `<div class="turnbar ${mine ? 'mine' : ''}" style="margin-top:0"><span class="pawn" style="background:${cur.color}"></span>${mine ? 'دورك الآن' : `دور ${esc(cur.name)}`}${me.inJail ? ' · أنت في السجن' : ''}${me.jc ? ` · بطاقة خروج × ${me.jc}` : ''}</div>`;
+  if (f && f.k === 'card') h += `<div class="focus-note" style="margin-top:8px">${esc(S.players[f.pid].name)} سحب ${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'}: ${esc(f.text)}</div>`;
+  return h;
+}
+/* بطاقة القرار: تظهر أسفل بطاقات الاسم والنقود مباشرة (فيها زر الرمي والإنهاء وبقية القرارات) */
+function decisionView(st) {
+  const S = st.s, me = S.players[st.me], p = st.prompt;
   let h = '';
   if (S.over) {
     const w = S.players[S.winner];
     return `<div class="card"><h2>${S.winner === st.me ? 'مبروك، فزت!' : 'انتهت اللعبة'}</h2><div style="font-size:20px;font-weight:700">الفائز: ${esc(w.name)}</div>${standingsHTML(S)}${st.host ? '<button class="btn primary" data-new="1">لعبة جديدة</button>' : '<div class="muted">المضيف يبدأ لعبة جديدة.</div>'}<button class="btn" data-leave="1">مغادرة</button></div>`;
   }
   if (me.bankrupt) return '<div class="card"><h2>خرجت من اللعبة</h2><span class="muted">يمكنك متابعة اللوحة والسجل حتى تنتهي المباراة.</span></div>';
-  h += `<div class="turnbar ${mine ? 'mine' : ''}"><span class="pawn" style="background:${cur.color}"></span>${mine ? 'دورك الآن' : `دور ${esc(cur.name)}`}${me.inJail ? ' · أنت في السجن' : ''}${me.jc ? ` · بطاقة خروج × ${me.jc}` : ''}</div>`;
-  if (f && f.k === 'card') h += `<div class="focus-note" style="margin-top:12px">${esc(S.players[f.pid].name)} سحب ${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'}: ${esc(f.text)}</div>`;
   if (!p) {
     const pend = S.pending, w = pend ? S.players[pend.pid] : null;
-    return h + `<div class="card status">${Board.diceHTML(S)}<div style="font-weight:600">${esc(S.log[0] || '')}</div><div class="muted">${w ? `بانتظار ${esc(w.name)}...` : 'جارٍ التنفيذ...'}</div></div>`;
+    return `<div class="card status">${Board.diceHTML(S)}<div style="font-weight:600">${esc(S.log[0] || '')}</div><div class="muted">${w ? `بانتظار ${esc(w.name)}...` : 'جارٍ التنفيذ...'}</div></div>`;
   }
   const dis = sentSeq === p.seq;
   const b = (v, label, cls, off) => `<button class="btn ${cls || ''}" data-ans="${v}" ${off || dis ? 'disabled' : ''}>${label}</button>`;
@@ -91,7 +97,7 @@ function playersStrip(st) {
   return `<div class="pstrip">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · في السجن' : ''}<span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `أملاكه (${own.length}): ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
 function boardView(st) {
-  return `<div class="boardwrap">${promptView(st)}${playersStrip(st)}<div class="row" style="margin:10px 0 8px;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'تصغير اللوحة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:13px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار الكاملة.</span></div><div style="overflow:auto;border-radius:14px"><div id="bd"></div></div></div>`;
+  return `<div class="boardwrap">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:10px 0 8px;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'تصغير اللوحة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:13px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار الكاملة.</span></div><div style="overflow:auto;border-radius:14px"><div id="bd"></div></div></div>`;
 }
 function paintBoard(S) {
   const cur = S.players[S.cur];
@@ -109,7 +115,7 @@ function settingsView(st) {
     <label><input type="checkbox" id="set-snd" ${snd ? 'checked' : ''}> المؤثرات الصوتية</label>
     <label><input type="checkbox" id="set-vib" ${vib ? 'checked' : ''}> اهتزاز الهاتف عند حلول دوري</label>
   </div>
-  ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
+  ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="slow" ${spd === 'slow' ? 'selected' : ''}>بطيئة</option><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
   <div class="muted" style="font-size:13px">الرصيد الابتدائي وجائزة الوقوف المجاني يضبطهما المضيف من الردهة قبل بدء اللعبة.</div>
   <div class="muted">غرفة <bdi dir="ltr">${esc(st.code)}</bdi></div>
   <button class="btn danger" data-leave="1">مغادرة الغرفة</button></div>`;
