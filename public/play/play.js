@@ -9,7 +9,8 @@ const store = {
 };
 const qCode = (new URLSearchParams(location.search).get('c') || '').replace(/\D/g, '').slice(0, 4);
 let room = null; try { room = JSON.parse(store.get('sa_room') || 'null'); } catch (e) { room = null; }
-const App = window.App = { st: null, lobby: null, me: null, tab: 'act', room, root: $('#root'), $, esc, store, lastSeq: null, chat: [], chatUnread: 0 };
+const App = window.App = { st: null, lobby: null, me: null, tab: 'board', room, root: $('#root'), $, esc, store, lastSeq: null, chat: [], chatUnread: 0, speedV: store.get('sa_speed') || 'normal' };
+try { if (store.get('sa_mute') === '1') Sfx.setMuted(true); } catch (e) { /* ignore */ }
 
 function send(o) { return net.send(o); }
 function toast(m) {
@@ -29,7 +30,7 @@ const net = Net.connect({
     else if (m.t === 'state') {
       App.st = m; App.lobby = null; App.me = m.me;
       const seq = m.prompt ? m.prompt.seq : null;
-      if (seq && seq !== App.lastSeq) { try { navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
+      if (seq && seq !== App.lastSeq) { try { if (store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
       App.lastSeq = seq;
     }
     else if (m.t === 'chatHist') { App.chat = Array.isArray(m.list) ? m.list.slice(-50) : []; if (App.st) render(); return; }
@@ -83,7 +84,7 @@ function renderLobby() {
     <input type="text" id="link" readonly value="${esc(link)}" dir="ltr" style="font-size:13px;height:42px"><button class="btn sm" id="copy" style="width:100%">نسخ رابط الدعوة</button></div>
     <div class="card"><b>اللاعبون (${L.players.length} من 6)</b><div class="plist">${L.players.map((p) => `<div class="pitem"><span class="pawn" style="background:${COLORS[p.id]}"></span>${esc(p.name)}${p.id === L.me ? ' (أنت)' : ''}<small>${p.bot ? 'آلي' : p.host ? 'المضيف' : p.connected ? '' : 'غير متصل'}</small>${host && p.id !== L.me ? `<button class="btn sm" data-kick="${p.id}" aria-label="إزالة ${esc(p.name)}">إزالة</button>` : ''}</div>`).join('')}</div>
     ${host ? `<button class="btn" id="bot" ${full ? 'disabled' : ''}>إضافة لاعب آلي</button>
-      <div class="opts"><label>الرصيد الابتدائي <select id="cash">${[1000, 1500, 2000, 3000].map((v) => `<option ${v === L.cfg.cash ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label><input type="checkbox" id="jack" ${L.cfg.jackpot ? 'checked' : ''}> جائزة الوقوف المجاني</label></div>
+      <div class="opts"><label>الرصيد الابتدائي <select id="cash">${[1000, 1500, 2000, 3000].map((v) => `<option ${v === L.cfg.cash ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label>سرعة اللعبة <select id="spd">${[['normal', 'عادية'], ['fast', 'سريعة'], ['turbo', 'خاطفة']].map(([v, l]) => `<option value="${v}" ${v === App.speedV ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label><input type="checkbox" id="jack" ${L.cfg.jackpot ? 'checked' : ''}> جائزة الوقوف المجاني</label></div>
       <button class="btn primary" id="start" ${L.players.length < 2 ? 'disabled' : ''}>ابدأ اللعبة</button>
       ${L.players.length < 2 ? '<span class="muted">يلزم لاعبان على الأقل. أضف لاعباً آلياً أو انتظر صديقاً.</span>' : ''}`
     : '<div class="muted" style="text-align:center;padding:8px">بانتظار المضيف ليبدأ اللعبة...</div>'}</div>
@@ -96,6 +97,7 @@ function renderLobby() {
     $('#start').onclick = () => send({ t: 'start' });
     const cfg = () => send({ t: 'cfg', cash: +$('#cash').value, jackpot: $('#jack').checked });
     $('#cash').onchange = cfg; $('#jack').onchange = cfg;
+    $('#spd').onchange = () => { App.speedV = $('#spd').value; store.set('sa_speed', App.speedV); send({ t: 'speed', v: App.speedV }); };
   }
 }
 render();
