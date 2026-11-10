@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سيد العقار | شاشة التلفاز</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap">
+<link rel="stylesheet" href="../shared/board.css">
+<style>
+/* التلفاز: اللوحة على اليسار بحجم الشاشة، ولوحة اللاعبين والسجل على اليمين */
+html,body{height:100%;overflow:hidden}
+body{font-size:2.1vh;cursor:none}
+#lobby,#game{height:100%;padding:2.2vh 2.6vh}
+#lobby{display:grid;grid-template-columns:1fr auto;gap:4vh;align-items:center;max-width:2000px;margin:0 auto}
+.hero h1{font-family:var(--f-display);font-size:12vh;line-height:1;margin:0;color:var(--accent)}
+.hero p{font-size:2.6vh;color:var(--muted);margin:1.2vh 0 3vh;line-height:1.7;max-width:46ch}
+.codeRow{display:flex;gap:1.4vh;direction:ltr;justify-content:flex-end;margin-bottom:3vh}
+.codeRow b{font-family:var(--f-display);font-size:15vh;line-height:1;width:1.15em;text-align:center;background:var(--surface);border:2px solid var(--accent);border-radius:1.6vh;padding:1vh 0;color:var(--ink);font-variant-numeric:tabular-nums}
+.how{display:grid;gap:1vh;font-size:2.5vh;color:var(--muted)}.how b{color:var(--ink)}
+.how code{direction:ltr;unicode-bidi:isolate;color:var(--accent);font-weight:700}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vh;margin-top:3.4vh}
+.slot{display:flex;align-items:center;gap:1vh;padding:1.6vh 1.8vh;border-radius:1.6vh;background:var(--surface);border:1px solid var(--line);font-size:2.6vh;font-weight:600;min-height:7vh}
+.slot.empty{border-style:dashed;color:var(--muted);font-weight:400;background:transparent}
+.slot .pawn{width:2.6vh;height:2.6vh}
+.slot small{color:var(--muted);font-weight:400;font-size:1.8vh;margin-inline-start:auto}
+.qrbox{background:#fff;border-radius:2vh;padding:1.6vh;box-shadow:var(--shadow);text-align:center;color:#111}
+.qrbox img{display:block;width:34vh;height:34vh}
+.qrbox span{display:block;margin-top:.8vh;font-weight:700;font-size:2.4vh}
+#game{display:grid;grid-template-columns:min(calc(100vh - 4.4vh),62vw) minmax(0,1fr);gap:2.6vh;direction:ltr}
+#side{direction:rtl;display:flex;flex-direction:column;gap:1.6vh;min-height:0;min-width:0}
+.badge{display:flex;align-items:center;gap:1.6vh;padding:1.2vh 1.8vh;border-radius:1.6vh;background:var(--surface);border:1px solid var(--line)}
+.badge b{font-family:var(--f-display);font-size:5vh;letter-spacing:.12em;color:var(--accent);direction:ltr}
+.badge span{color:var(--muted);font-size:1.9vh;line-height:1.5}
+.badge img{width:7vh;height:7vh;border-radius:.8vh;background:#fff;padding:.4vh;margin-inline-start:auto}
+#players{display:grid;gap:1.1vh}
+.pl{padding:1.1vh 1.6vh;border:1px solid var(--line);border-radius:1.6vh;background:var(--surface);display:grid;gap:.7vh}
+.pl.cur{border-color:var(--accent);box-shadow:0 0 0 .3vh color-mix(in srgb,var(--accent) 40%,transparent)}
+.pl.bk{opacity:.4}.pl.bk b{text-decoration:line-through}
+.pl .top{display:flex;align-items:center;gap:1vh}
+.pl .pawn{width:2.6vh;height:2.6vh}
+.pl b{font-size:2.5vh}
+.pl .money{margin-inline-start:auto;font-variant-numeric:tabular-nums;font-weight:700;font-size:3vh;color:var(--accent)}
+.tag{font-size:1.6vh;padding:.1vh .9vh;border-radius:99px;background:var(--surface2);color:var(--muted)}
+.tag.bad{background:var(--bad);color:#fff}
+.pchips{display:flex;flex-wrap:wrap;gap:.4vh}
+.pc{min-width:2.5vh;height:2.5vh;border-radius:.5vh;border:1px solid rgba(0,0,0,.4);font-size:1.4vh;color:#fff;text-align:center;line-height:2.4vh;font-weight:700;text-shadow:0 1px 1px rgba(0,0,0,.6)}
+.pc.mg{opacity:.35}
+#log{flex:1.15;min-height:0;overflow:hidden;border:1px solid var(--line);border-radius:1.6vh;background:var(--surface);padding:1.2vh 1.8vh;font-size:2vh;line-height:1.75;color:var(--muted)}
+#log div:first-child{color:var(--ink);font-weight:600}
+.pnames{font-size:1.65vh;line-height:1.5;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#chatbox{flex:1;min-height:0;overflow:hidden;border:1px solid var(--line);border-radius:1.6vh;background:var(--surface);padding:1.2vh 1.8vh;display:flex;flex-direction:column;gap:.6vh}
+#chatbox h3{margin:0;font-size:2vh;color:var(--accent)}
+#chatbox .clist{display:flex;flex-direction:column;gap:.7vh;overflow:hidden;font-size:1.9vh;line-height:1.45}
+#chatbox .cm b{margin-inline-end:.6vh}
+#chatbox .empty{color:var(--muted)}
+.bbtns{display:flex;gap:1.2cqw;flex-wrap:wrap;justify-content:center}
+.bbtn{cursor:pointer;border:0;border-radius:99px;background:var(--accent);color:var(--accent-fg);font-family:inherit;font-weight:700;font-size:max(13px,2.8cqw);padding:1.1cqw 3.4cqw;box-shadow:var(--shadow)}
+.bbtn.end{background:var(--surface2);color:var(--ink);border:2px solid var(--accent)}
+.bbtn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.focus{flex:1;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1cqw}
+.focus .deed{max-width:44cqw}
+.focus .q{font-size:max(12px,2.6cqw);font-weight:700}
+.focus .sub{font-size:max(11px,2.1cqw);color:var(--muted)}
+.cardbox{width:min(60cqw,100%);padding:2.4cqw;border-radius:2cqw;border:.4cqw solid var(--accent);background:var(--surface);box-shadow:var(--shadow)}
+.cardbox small{display:block;color:var(--accent);font-weight:700;font-size:max(11px,2.2cqw);margin-bottom:1cqw}
+.cardbox p{margin:0;font-size:max(13px,3cqw);line-height:1.6;font-weight:600}
+.bidnum{font-family:var(--f-display);font-size:9cqw;color:var(--accent);line-height:1}
+#toasts{position:fixed;inset-inline:0;top:3vh;display:flex;flex-direction:column;align-items:center;gap:1vh;z-index:30;pointer-events:none}
+.toast{background:var(--accent);color:var(--accent-fg);padding:1.1vh 2.8vh;border-radius:99px;font-size:3vh;font-weight:700;box-shadow:var(--shadow);animation:tin .25s}
+@keyframes tin{from{transform:translateY(-1.5vh);opacity:0}}
+#status{position:fixed;inset:0;z-index:40;background:rgba(5,10,20,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;font-size:4vh;text-align:center;padding:4vh}
+#status small{font-size:2.4vh;color:var(--muted)}
+#win{position:fixed;inset:0;z-index:35;background:rgba(5,10,20,.88);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2vh;text-align:center}
+#win h2{font-family:var(--f-display);font-size:11vh;margin:0;color:var(--accent)}
+#win .st{display:grid;gap:1vh;min-width:46vh;font-size:3vh}
+#win .st div{display:flex;gap:2vh;justify-content:space-between;padding:1vh 2vh;background:var(--surface);border-radius:1.4vh}
+@media (max-width:900px) and (orientation:portrait){body{font-size:2vh;overflow:auto}#lobby{grid-template-columns:1fr}#game{grid-template-columns:1fr;height:auto}html,body{overflow:auto}}
+</style>
+</head>
+<body>
+<section id="lobby" hidden></section>
+<section id="game" hidden><div id="board"></div>
+  <aside id="side">
+    <div class="badge" id="badge"></div>
+    <div id="players"></div>
+    <div id="log"></div>
+    <div id="chatbox"><h3>شات الغرفة</h3><div class="clist" id="clist"><div class="empty">لا رسائل بعد — يكتب اللاعبون من تبويب «شات» في هواتفهم.</div></div></div>
+  </aside>
+</section>
+<div id="toasts"></div>
+<div id="win" hidden></div>
+<div id="status" hidden></div>
+<script src="../shared/data.js"></script>
+<script src="../shared/board.js"></script>
+<script src="../shared/net.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = (s) => document.querySelector(s), esc = Board.esc, GC = GameData.GC, SQ = GameData.SQ, COLORS = GameData.COLORS;
+const params = new URLSearchParams(location.search), watchCode = params.get('c');
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } } };
+let S = null, lobby = null, code = null, status = 'connecting', err = null, raf = 0, chat = [], canBoard = false;
+const joinHost = location.host + '/play';
+
+const net = Net.connect({
+  onOpen() { err = null; if (watchCode) net.send({ t: 'watch', code: watchCode }); else net.send({ t: 'create', role: 'tv', resume: store.get('tvRoom') || undefined }); },
+  onStatus(s) { status = s; draw(); },
+  onMsg(m) {
+    if (m.t === 'created') { code = m.code; if (!watchCode) store.set('tvRoom', code); }
+    else if (m.t === 'lobby') { lobby = m; S = null; code = m.code; }
+    else if (m.t === 'state') { S = m.s; code = m.code; lobby = null; canBoard = !!m.canBoard; }
+    else if (m.t === 'chatHist') { chat = Array.isArray(m.list) ? m.list.slice(-50) : []; }
+    else if (m.t === 'ev') return onEvent(m.e);
+    else if (m.t === 'err') { err = m.m; if (m.fatal) store.set('tvRoom', ''); }
+    draw();
+  },
+});
+function onEvent(e) {
+  if (e.e === 'chat') { chat.push({ id: e.id, n: e.n, m: e.m }); if (chat.length > 50) chat.splice(0, chat.length - 50); draw(); return; }
+  if (e.e === 'sfx') Sfx.play(e.n);
+  else if (e.e === 'toast') {
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = e.m; const box = $('#toasts'); box.appendChild(t);
+    while (box.children.length > 3) box.firstChild.remove(); setTimeout(() => t.remove(), 2600);
+  }
+}
+['click', 'keydown', 'touchstart'].forEach((ev) => addEventListener(ev, () => Sfx.unlock(), { once: true }));
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-tvans]'); if (b) net.send({ t: 'boardAns', v: b.dataset.tvans }); });
+document.addEventListener('keydown', (e) => {
+  if (!canBoard || !S || !S.pending || S.over) return;
+  const b = document.querySelector('[data-tvans]');
+  if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); b.click(); }
+});
+function draw() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); }
+
+function paint() {
+  const st = $('#status');
+  if (err) { st.hidden = false; st.innerHTML = `<div>${esc(err)}</div><small>${watchCode ? 'تأكد من كود الغرفة ثم أعد التحميل' : ''}</small>`; }
+  else if (status !== 'open') { st.hidden = false; st.innerHTML = `<div>جارٍ الاتصال بالخادم...</div><small>${esc(location.host)}</small>`; }
+  else st.hidden = true;
+  $('#lobby').hidden = !!S || !code; $('#game').hidden = !S;
+  if (S) paintGame(); else if (code) paintLobby();
+}
+function paintLobby() {
+  const pl = lobby ? lobby.players : [];
+  const slots = Array.from({ length: 6 }, (_, i) => pl[i]
+    ? `<div class="slot"><span class="pawn" style="background:${COLORS[i]}"></span>${esc(pl[i].name)}<small>${pl[i].bot ? 'آلي' : pl[i].host ? 'المضيف' : pl[i].connected ? '' : 'غير متصل'}</small></div>`
+    : '<div class="slot empty">بانتظار لاعب...</div>').join('');
+  $('#lobby').innerHTML = `<div class="hero"><h1>سيد العقار</h1>
+    <p>اشترِ المدن والقطارات، ابنِ البيوت والفنادق، وأفلس منافسيك. كل لاعب يتحكم من هاتفه.</p>
+    <div class="codeRow">${String(code).split('').map((d) => `<b>${d}</b>`).join('')}</div>
+    <div class="how"><div>1. افتح على هاتفك <code>${esc(joinHost)}</code> أو امسح الرمز</div><div>2. أدخل كود الغرفة <b>${esc(code)}</b> واكتب اسمك</div><div>3. المضيف (أول من ينضم) يضغط «ابدأ» من هاتفه</div></div>
+    <div class="slots">${slots}</div></div>
+    <div class="qrbox"><img src="/qr?c=${encodeURIComponent(code)}" alt="رمز QR للانضمام"><span>امسح للانضمام</span></div>`;
+}
+function ownedOf(id) { return Object.keys(S.owner).map(Number).filter((i) => S.owner[i] === id).sort((a, b) => a - b); }
+function chip(i) { const s = SQ[i], c = s.g ? GC[s.g] : s.t === 'rail' ? '#59627a' : '#7a9a98', h = S.houses[i] || 0; return `<span class="pc ${S.mort[i] ? 'mg' : ''}" style="background:${c}" title="${esc(s.n)}">${h === 5 ? 'F' : h || ''}</span>`; }
+function centerHTML() {
+  const p = S.players[S.cur], f = S.focus, pend = S.pending;
+  let focus = '';
+  if (f && f.k === 'deed') focus = `<div class="q">هل يشتري ${esc(S.players[f.pid].name)}؟</div>${Board.deedHTML(f.i, S)}`;
+  else if (f && f.k === 'card') focus = `<div class="cardbox"><small>${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'} · ${esc(S.players[f.pid].name)}</small><p>${esc(f.text)}</p></div>`;
+  else if (f && f.k === 'auction') { const h = f.high != null ? S.players[f.high] : null; focus = `<div class="q">مزاد على ${esc(SQ[f.i].n)}</div><div class="bidnum">${f.bid}</div><div class="sub">${h ? 'الأعلى: ' + esc(h.name) : 'لا عروض بعد'} · الدور على ${esc(S.players[f.turn].name)}</div>`; }
+  else if (S.trade) focus = `<div class="q">صفقة قيد التفاوض</div><div class="sub">${esc(S.players[S.trade.from].name)} ⇄ ${esc(S.players[S.trade.to].name)}</div>`;
+  else if (pend) { const w = S.players[pend.pid]; focus = `<div class="sub">بانتظار ${esc(w.name)}${{ roll: ' ليرمي النرد', end: ' لينهي دوره', jail: ' ليقرر في السجن', debt: ' لتسديد دين', buy: '', bid: '' }[pend.kind] || ''}</div>`; }
+  let acts = '';
+  if (canBoard && pend && !S.over) {
+    if (pend.kind === 'roll') acts = `<div class="bbtns"><button class="bbtn" data-tvans="roll">ارمِ النرد 🎲</button></div>`;
+    else if (pend.kind === 'end') acts = `<div class="bbtns"><button class="bbtn end" data-tvans="end">إنهاء الدور ✓</button></div>`;
+  }
+  return `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${p.color}"></span><span>دور ${esc(p.name)}</span></div>${Board.diceHTML(S)}${acts}<div class="focus">${focus}</div><div class="msg">${esc(S.log[0] || '')}</div>`;
+}
+function paintGame() {
+  Board.render($('#board'), S, centerHTML());
+  $('#badge').innerHTML = `<b>${esc(code)}</b><span>كود الغرفة<br><bdi dir="ltr">${esc(joinHost)}</bdi></span><img src="/qr?c=${encodeURIComponent(code)}" alt="QR">`;
+  $('#players').innerHTML = S.players.map((p) => `<div class="pl ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="top"><span class="pawn" style="background:${p.color}"></span><b>${esc(p.name)}</b>${p.bot ? '<span class="tag">آلي</span>' : ''}${!p.bot && !p.connected && !p.bankrupt ? '<span class="tag bad">غير متصل</span>' : ''}${p.inJail ? '<span class="tag bad">في السجن</span>' : ''}${p.jc ? `<span class="tag">بطاقة خروج × ${p.jc}</span>` : ''}<span class="money">${p.bankrupt ? 'مفلس' : p.money.toLocaleString('en-US')}</span></div><div class="pchips">${ownedOf(p.id).map(chip).join('')}</div><div class="pnames">${ownedOf(p.id).length ? ownedOf(p.id).map((i) => esc(SQ[i].n)).join('، ') : 'لا عقارات بعد'}</div></div>`).join('');
+  $('#log').innerHTML = S.log.slice(0, 9).map((l) => `<div>${esc(l)}</div>`).join('');
+  $('#clist').innerHTML = chat.length ? chat.slice(-7).map((c) => `<div class="cm"><b style="color:${COLORS[c.id] || 'var(--ink)'}">${esc(c.n)}:</b>${esc(c.m)}</div>`).join('') : '<div class="empty">لا رسائل بعد — يكتب اللاعبون من تبويب «شات» في هواتفهم.</div>';
+  const w = $('#win');
+  if (S.over && S.standings) {
+    const win = S.players[S.winner];
+    w.hidden = false;
+    w.innerHTML = `<small style="font-size:3vh;color:var(--muted)">الفائز</small><h2>${esc(win.name)}</h2><div class="st">${S.standings.map((r) => `<div><span><span class="pawn" style="background:${S.players[r.id].color}"></span> ${esc(S.players[r.id].name)}${r.bankrupt ? ' (مفلس)' : ''}</span><b>${r.worth.toLocaleString('en-US')}</b></div>`).join('')}</div><small style="font-size:2.4vh;color:var(--muted)">يبدأ المضيف لعبة جديدة من هاتفه</small>`;
+  } else w.hidden = true;
+}
+})();
+</script>
+</body>
+</html>
