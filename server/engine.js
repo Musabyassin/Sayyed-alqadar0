@@ -11,7 +11,7 @@ class Game {
   constructor(cfg, io) {
     this.io = io;
     this.dead = false;
-    this.speed = cfg.speed == null ? 1 : cfg.speed;
+    this.speed = cfg.speed == null ? 1.6 : cfg.speed;
     this.pend = null;
     this.chanceDeck = shuffle(CHANCE.map((x) => ({ ...x })));
     this.chestDeck = shuffle(CHEST.map((x) => ({ ...x })));
