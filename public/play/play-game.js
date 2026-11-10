@@ -4,7 +4,7 @@
 const { $, esc, send, toast, modal, closeModal } = App;
 const SQ = GameData.SQ, GC = GameData.GC, GROUPS = GameData.GROUPS, COLORS = GameData.COLORS;
 const fmt = (n) => Number(n).toLocaleString('en-US');
-let tab = 'act', sentSeq = null, lastAutoSeq = null;
+let tab = 'board', sentSeq = null, lastAutoSeq = null;
 const tf = { to: null, give: new Set(), get: new Set(), gc: 0, rc: 0 };
 App.resetTrade = () => { tf.give.clear(); tf.get.clear(); tf.gc = 0; tf.rc = 0; };
 const ownedOf = (S, id) => Object.keys(S.owner).map(Number).filter((i) => S.owner[i] === id).sort((a, b) => a - b);
@@ -12,14 +12,14 @@ const tradableOf = (S, id) => ownedOf(S, id).filter((i) => !SQ[i].g || !GROUPS[S
 const colorOf = (i) => (SQ[i].g ? GC[SQ[i].g] : SQ[i].t === 'rail' ? '#59627a' : '#7a9a98');
 const names = (arr) => arr.map((i) => SQ[i].n).join('، ') || 'لا عقارات';
 const ICONS = {
-  act: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>',
   props: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9H3z"/><path d="M9 20v-6h6v6"/></svg>',
   trade: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h14l-3-3M20 16H6l3 3"/></svg>',
   board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="8" y="8" width="8" height="8"/></svg>',
   log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6h14M5 12h14M5 18h9"/></svg>',
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" stroke-width="3"/></svg>',
 };
-const TABS = [['act', 'الإجراء'], ['props', 'أملاكي'], ['trade', 'صفقة'], ['board', 'اللوحة'], ['chat', 'شات'], ['log', 'السجل']];
+const TABS = [['board', 'اللوحة'], ['props', 'أملاكي'], ['trade', 'صفقة'], ['chat', 'شات'], ['log', 'السجل'], ['gear', 'إعدادات']];
 
 function ans(v) {
   const p = App.st.prompt; if (!p || sentSeq === p.seq) return;
@@ -43,7 +43,8 @@ function propsHTML(st, withHint) {
 function standingsHTML(S) {
   return `<div class="plist">${S.standings.map((r) => `<div class="pitem"><span class="pawn" style="background:${S.players[r.id].color}"></span>${esc(S.players[r.id].name)}${r.bankrupt ? ' (مفلس)' : ''}<small>${fmt(r.worth)}</small></div>`).join('')}</div>`;
 }
-function actView(st) {
+/* منطقة القرارات أعلى اللوحة: رمي، شراء، مزاد، سجن، دين، إنهاء — حلت محل تبويب «إجراء» المحذوف */
+function promptView(st) {
   const S = st.s, me = S.players[st.me], p = st.prompt, cur = S.players[S.cur], f = S.focus;
   const mine = S.cur === st.me && !S.over;
   let h = '';
@@ -90,22 +91,29 @@ function playersStrip(st) {
   return `<div class="pstrip">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · في السجن' : ''}<span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `أملاكه (${own.length}): ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
 function boardView(st) {
-  return `<div class="boardwrap">${playersStrip(st)}<div id="bacts"></div><div class="row" style="margin-bottom:8px;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'تصغير اللوحة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:13px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار الكاملة.</span></div><div style="overflow:auto;border-radius:14px"><div id="bd"></div></div></div>`;
+  return `<div class="boardwrap">${promptView(st)}${playersStrip(st)}<div class="row" style="margin:10px 0 8px;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'تصغير اللوحة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:13px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار الكاملة.</span></div><div style="overflow:auto;border-radius:14px"><div id="bd"></div></div></div>`;
 }
 function paintBoard(S) {
-  const cur = S.players[S.cur], st = App.st, p = st.prompt;
+  const cur = S.players[S.cur];
   $('#bd').style.width = App.zoom ? '820px' : '';
   Board.render($('#bd'), S, `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}<div class="msg">${esc(S.log[0] || '')}</div>`);
-  /* رمي النرد وإنهاء الدور أيضا على اللوحة الرئيسية، بنفس صلاحيات تبويب الإجراء */
-  const ba = $('#bacts');
-  if (ba) {
-    const dis = p && sentSeq === p.seq;
-    if (p && p.kind === 'roll') ba.innerHTML = `<button class="btn primary big" data-ans="roll" ${dis ? 'disabled' : ''}>ارمِ النرد 🎲</button>`;
-    else if (p && p.kind === 'end') ba.innerHTML = `<button class="btn primary big" data-ans="end" ${dis ? 'disabled' : ''}>إنهاء الدور ✓</button>`;
-    else ba.innerHTML = '';
-  }
 }
 function logView(S) { return `<div class="card"><div class="log">${S.log.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>`; }
+
+/* ----- الإعدادات ----- */
+function settingsView(st) {
+  const snd = App.store.get('sa_mute') !== '1', vib = App.store.get('sa_vib') !== '0';
+  const spd = App.speedV || 'normal';
+  return `<div class="card"><b>إعدادات اللعبة</b>
+  <div class="opts" style="display:grid;gap:12px">
+    <label><input type="checkbox" id="set-snd" ${snd ? 'checked' : ''}> المؤثرات الصوتية</label>
+    <label><input type="checkbox" id="set-vib" ${vib ? 'checked' : ''}> اهتزاز الهاتف عند حلول دوري</label>
+  </div>
+  ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
+  <div class="muted" style="font-size:13px">الرصيد الابتدائي وجائزة الوقوف المجاني يضبطهما المضيف من الردهة قبل بدء اللعبة.</div>
+  <div class="muted">غرفة <bdi dir="ltr">${esc(st.code)}</bdi></div>
+  <button class="btn danger" data-leave="1">مغادرة الغرفة</button></div>`;
+}
 
 /* ----- الشات الكتابي: خانة منفصلة ----- */
 const chatLine = (c, me) => `<div class="cm2 ${c.id === me ? 'mine' : ''}"><b style="color:${COLORS[c.id] || 'var(--ink)'}">${esc(c.n)}${c.id === me ? ' (أنت)' : ''}:</b>${esc(c.m)}</div>`;
@@ -137,18 +145,18 @@ App.renderGame = function renderGame() {
   }
   $('#hdr').innerHTML = `<span class="pawn" style="background:${me.color}"></span><b>${esc(me.name)}</b><span class="code">غرفة ${esc(st.code)}</span><span class="money">${fmt(me.money)}</span>`;
   const p = st.prompt;
-  if (p && p.seq !== lastAutoSeq) { lastAutoSeq = p.seq; if (['roll', 'buy', 'bid', 'jail', 'debt'].includes(p.kind)) tab = 'act'; }
-  if (S.over) tab = 'act';
-  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${ICONS[k]}${l}${k === 'act' && p && tab !== 'act' ? '<span class="dot"></span>' : ''}${k === 'chat' && App.chatUnread > 0 && tab !== 'chat' ? '<span class="dot"></span>' : ''}</button>`).join('');
+  if (p && p.seq !== lastAutoSeq) { lastAutoSeq = p.seq; if (['roll', 'buy', 'bid', 'jail', 'debt'].includes(p.kind)) tab = 'board'; }
+  if (S.over) tab = 'board';
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${ICONS[k]}${l}${k === 'board' && p && tab !== 'board' ? '<span class="dot"></span>' : ''}${k === 'chat' && App.chatUnread > 0 && tab !== 'chat' ? '<span class="dot"></span>' : ''}</button>`).join('');
   const v = $('#view'), ae = document.activeElement;
   const typing = ae && v.contains(ae) && ((tab === 'trade' && (ae.tagName === 'INPUT' && ae.type !== 'checkbox' || ae.tagName === 'SELECT')) || (tab === 'chat' && ae.id === 'cin'));
   if (!typing) {
-    if (tab === 'act') v.innerHTML = actView(st);
-    else if (tab === 'props') v.innerHTML = `<div class="card"><b>أملاكي</b>${propsHTML(st, true)}</div>`;
+    if (tab === 'props') v.innerHTML = `<div class="card"><b>أملاكي</b>${propsHTML(st, true)}</div>`;
     else if (tab === 'trade') v.innerHTML = tradeView(st);
-    else if (tab === 'board') { v.innerHTML = boardView(st); paintBoard(S); }
+    else if (tab === 'gear') v.innerHTML = settingsView(st);
     else if (tab === 'chat') { v.innerHTML = chatView(st); const box = $('#cmsg'); if (box) box.scrollTop = box.scrollHeight; }
-    else v.innerHTML = logView(S);
+    else if (tab === 'log') v.innerHTML = logView(S);
+    else { v.innerHTML = boardView(st); paintBoard(S); }
   } else if (tab === 'board') paintBoard(S);
   /* عرض صفقة واردة */
   const inc = S.trade && S.trade.to === st.me ? S.trade : null;
@@ -178,6 +186,9 @@ function onViewClick(e) {
 }
 function onViewChange(e) {
   const t = e.target;
+  if (t.id === 'set-snd') { App.store.set('sa_mute', t.checked ? '0' : '1'); Sfx.setMuted(!t.checked); return; }
+  if (t.id === 'set-vib') { App.store.set('sa_vib', t.checked ? '1' : '0'); return; }
+  if (t.id === 'set-speed') { App.speedV = t.value; App.store.set('sa_speed', t.value); send({ t: 'speed', v: t.value }); return; }
   if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); App.render(); }
   else if (t.dataset.give !== undefined) { (t.checked ? tf.give.add(+t.dataset.give) : tf.give.delete(+t.dataset.give)); }
   else if (t.dataset.get !== undefined) { (t.checked ? tf.get.add(+t.dataset.get) : tf.get.delete(+t.dataset.get)); }
