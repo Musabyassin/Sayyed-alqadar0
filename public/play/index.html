@@ -66,15 +66,33 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 .boardwrap .center .ctitle{font-size:5cqw}
 /* شريط اللاعبين فوق اللوحة: نقود وأملاك الجميع */
 .pstrip{display:grid;gap:5px;margin:8px 0 0}
-.pcard{padding:5px 9px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
+.pstrip.mini{grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
+.pcard{padding:5px 9px;border-radius:9px;background:var(--surface);border:1px solid var(--line);min-width:0}
 .pcard.cur{border-color:var(--accent)}
 .pcard .ph{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13.5px;line-height:1.3}
-.pcard .ph .pawn{width:14px;height:14px;border-width:1.5px}
-.pcard .ph .money{margin-inline-start:auto;color:var(--accent);font-variant-numeric:tabular-nums;font-size:14.5px}
+.pcard .ph .pawn{width:14px;height:14px;border-width:1.5px;flex:none}
+.pcard .ph .pname{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .ph .money{margin-inline-start:auto;color:var(--accent);font-variant-numeric:tabular-nums;font-size:14.5px;flex:none}
 .pcard .pn{font-size:11px;color:var(--muted);line-height:1.35;margin-top:1px}
+.pstrip.mini .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* منطقة القرارات أسفل بطاقات المعلومات على الهاتف */
 .boardwrap>.card{margin-top:8px;padding:10px}
 .boardwrap>.turnbar{margin-top:10px}
+/* مقاس الشاشة الكامل بلا تمرير: عمودي — العناصر فوق اللوحة، واللوحة تأخذ الباقي */
+.bdbox{overflow:auto;border-radius:14px}
+.binfo{display:contents}
+.boardwrap.fit{display:flex;flex-direction:column}
+.boardwrap.fit .bdbox{flex:1;min-height:0;overflow:hidden;display:flex;align-items:flex-start;justify-content:center}
+.boardwrap.fit .turnbar{margin-top:4px;padding:6px 10px}
+.boardwrap.fit .card{margin-top:6px;padding:9px;gap:8px}
+.boardwrap.fit .btn.big{min-height:54px;font-size:19px}
+/* مقاس الشاشة الكامل بلا تمرير: أفقي — عمود معلومات جانبي واللوحة بجانبه */
+@media (orientation:landscape) and (max-height:540px){
+  .boardwrap.fit{flex-direction:row;gap:8px}
+  .boardwrap.fit .binfo{display:flex;flex-direction:column;width:45%;min-width:0;overflow:auto}
+  .boardwrap.fit .pstrip.mini{grid-template-columns:1fr}
+  .boardwrap.fit .bdbox{align-items:center}
+}
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
