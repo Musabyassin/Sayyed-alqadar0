@@ -36,6 +36,7 @@ function propsHTML(st, withHint) {
     const bt = [];
     if (s.t === 'prop') { bt.push(`<button class="btn sm" data-act="build" data-i="${m.i}" ${can && m.b ? '' : 'disabled'}>بناء ${s.h}</button>`); bt.push(`<button class="btn sm" data-act="sell" data-i="${m.i}" ${can && m.s ? '' : 'disabled'}>بيع مبنى</button>`); }
     bt.push(m.mg ? `<button class="btn sm" data-act="unmort" data-i="${m.i}" ${can && m.u ? '' : 'disabled'}>فك الرهن ${m.uc}</button>` : `<button class="btn sm" data-act="mort" data-i="${m.i}" ${can && m.m ? '' : 'disabled'}>رهن ${s.p / 2}</button>`);
+    bt.push(`<button class="btn sm danger" data-act="sellprop" data-i="${m.i}" ${can && m.sp ? '' : 'disabled'}>بيع العقار للبنك ${m.spv}</button>`);
     return `<div class="prop"><div class="h"><span class="chip" style="background:${colorOf(m.i)}"></span>${esc(s.n)}<span class="st">${state}</span></div><div class="muted" style="font-size:12.5px">${Board.rentText(m.i, S)} — هذا ما يُخصم من الخصم إذا وقف هنا</div><div class="bt">${bt.join('')}</div></div>`;
   }).join('');
   return `${withHint && !can ? '<div class="muted" style="font-size:13px">أزرار الإدارة تعمل في دورك فقط.</div>' : ''}<div style="display:grid;gap:8px">${rows}</div><div class="muted" style="font-size:12px">البيوت المتاحة: ${S.houseBank} · الفنادق المتاحة: ${S.hotelBank}</div>`;
@@ -74,7 +75,7 @@ function decisionView(st) {
     const hi = p.high != null ? S.players[p.high] : null;
     h += `<div class="card"><b>مزاد على ${esc(SQ[p.idx].n)}</b><div class="bidbox"><div class="n">${p.cur}</div><div class="muted">${hi ? 'الأعلى: ' + esc(hi.name) : 'لا عروض بعد'} · رصيدك ${fmt(me.money)}</div></div><div class="row">${[10, 50, 100].map((n) => b(n, `+${n}`, 'primary', me.money < p.cur + n)).join('')}</div>${b(0, 'انسحب')}</div>`;
   } else if (p.kind === 'debt') {
-    h += `<div class="card"><b style="color:var(--bad)">عليك دفع ${fmt(p.need)}</b><span class="muted">رصيدك ${fmt(me.money)}. اجمع المبلغ برهن العقارات أو ببيع المباني.</span>${propsHTML(st, false)}<div class="row">${b('bankrupt', 'أعلن الإفلاس', 'danger')}${b('pay', `ادفع ${fmt(p.need)}`, 'primary', me.money < p.need)}</div></div>`;
+    h += `<div class="card"><b style="color:var(--bad)">عليك دفع ${fmt(p.need)}</b><span class="muted">رصيدك ${fmt(me.money)}. اجمع المبلغ ببيع المباني أو رهن العقارات أو بيعها للبنك.</span>${propsHTML(st, false)}<div class="row">${b('bankrupt', 'أعلن الإفلاس', 'danger')}${b('pay', `ادفع ${fmt(p.need)}`, 'primary', me.money < p.need)}</div></div>`;
   } else if (p.kind === 'end') h += `<div class="card">${b('end', 'إنهاء الدور', 'primary big')}<span class="muted" style="text-align:center">قبل الإنهاء يمكنك البناء من تبويب «أملاكي» أو عرض صفقة.</span></div>`;
   return h;
 }
@@ -178,7 +179,15 @@ App.renderGame = function renderGame() {
 function onViewClick(e) {
   const t = e.target;
   let el = t.closest('[data-ans]'); if (el) return ans(el.dataset.ans === '' ? '' : (isNaN(el.dataset.ans) ? el.dataset.ans : Number(el.dataset.ans)));
-  el = t.closest('[data-act]'); if (el) return send({ t: 'act', a: el.dataset.act, i: +el.dataset.i });
+  el = t.closest('[data-act]'); if (el) {
+    /* بيع العقار للبنك لا رجعة فيه: أول نقرة للتأكيد والثانية للتنفيذ */
+    if (el.dataset.act === 'sellprop' && el.dataset.armed !== '1') {
+      el.dataset.armed = '1'; el.textContent = 'متأكد؟ اضغط مجدداً للبيع للبنك'; el.classList.remove('danger'); el.classList.add('primary');
+      setTimeout(() => { if (el.isConnected) App.render(); }, 2800);
+      return;
+    }
+    return send({ t: 'act', a: el.dataset.act, i: +el.dataset.i });
+  }
   if (t.closest('[data-new]')) return send({ t: 'again' });
   if (t.closest('[data-leave]')) { send({ t: 'leave' }); App.room = null; App.store.del('sa_room'); App.st = null; App.lobby = null; App.render(); return; }
   if (t.closest('#tgo')) {
