@@ -66,9 +66,14 @@ class Game {
   unmortCost(i) { return Math.ceil((SQ[i].p / 2) * 1.1); }
   canUnmort(p, i) { return this.S.owner[i] === p.id && this.S.mort[i] && p.money >= this.unmortCost(i); }
   unmort(p, i) { p.money -= this.unmortCost(i); this.S.mort[i] = false; this.sfx('buy'); }
+  /* بيع العقار نفسه للبنك، قبل الرهن أو بعده: بلا رهن يعود بكامل سعره، ومرهوناً يُخصم مبلغ الرهن من السعر.
+     شرطه ألا تكون مبانٍ على أي عقار في مجموعته (تُباع المباني أولاً، كما في الرهن). */
+  canSellProp(p, i) { const s = SQ[i]; if (this.S.owner[i] !== p.id || this.hs(i) > 0) return false; if (s.g && grp(s.g).some((j) => this.hs(j) > 0)) return false; return true; }
+  sellPropValue(i) { return this.S.mort[i] ? SQ[i].p - SQ[i].p / 2 : SQ[i].p; }
+  sellProp(p, i) { const v = this.sellPropValue(i); p.money += v; delete this.S.owner[i]; this.S.mort[i] = false; this.S.houses[i] = 0; this.log(`${p.name} باع ${SQ[i].n} للبنك بـ ${v}`); this.toast(`${p.name} باع ${SQ[i].n} للبنك`); this.sfx('cash'); }
 
   manageInfo(p) {
-    return this.owned(p).map((i) => ({ i, h: this.hs(i), mg: !!this.S.mort[i], b: this.canBuild(p, i), s: this.canSell(p, i), m: this.canMort(p, i), u: this.canUnmort(p, i), uc: this.unmortCost(i) }));
+    return this.owned(p).map((i) => ({ i, h: this.hs(i), mg: !!this.S.mort[i], b: this.canBuild(p, i), s: this.canSell(p, i), m: this.canMort(p, i), u: this.canUnmort(p, i), uc: this.unmortCost(i), sp: this.canSellProp(p, i), spv: this.sellPropValue(i) }));
   }
 
   /* أمر إدارة أملاك من هاتف اللاعب (مسموح أثناء أي سؤال موجه إليه) */
@@ -80,6 +85,7 @@ class Game {
     else if (a === 'sell' && this.canSell(p, i)) { this.sell(p, i); ok = true; }
     else if (a === 'mort' && this.canMort(p, i)) { this.mort(p, i); ok = true; }
     else if (a === 'unmort' && this.canUnmort(p, i)) { this.unmort(p, i); ok = true; }
+    else if (a === 'sellprop' && this.canSellProp(p, i)) { this.sellProp(p, i); ok = true; }
     if (ok) this.sync();
     return ok;
   }
@@ -131,6 +137,7 @@ class Game {
     while (p.money < need && g++ < 300) {
       const sl = this.owned(p).filter((i) => this.canSell(p, i)).sort((a, b) => this.hs(b) - this.hs(a)); if (sl.length) { this.sell(p, sl[0]); continue; }
       const mo = this.owned(p).filter((i) => this.canMort(p, i)).sort((a, b) => SQ[a].p - SQ[b].p); if (mo.length) { this.mort(p, mo[0]); continue; }
+      const sp = this.owned(p).filter((i) => this.canSellProp(p, i)).sort((a, b) => SQ[a].p - SQ[b].p); if (sp.length) { this.sellProp(p, sp[0]); continue; }
       break;
     }
   }
