@@ -119,11 +119,11 @@ function playersStrip(st) {
   return `<div class="pstrip mini">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `(${own.length}) ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
 function boardView(st) {
-  return `<div class="boardwrap ${App.zoom ? '' : 'fit'}"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
+  return `<div class="boardwrap ${App.zoom ? '' : 'fit'} o-${App.store.get('sa_orient') || 'auto'}"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
 }
 function paintBoard(S) {
   const cur = S.players[S.cur];
-  Board.render($('#bd'), S, `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}<div class="msg">${esc(S.log[0] || '')}</div>`);
+  Board.render($('#bd'), S, `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}${Board.centerInfo(S)}<div class="msg">${esc(S.log[0] || '')}</div>`);
   fitBoard();
 }
 /* مقاس الشاشة: اللوحة وبقية العناصر داخل ارتفاع الشاشة تماماً بلا تمرير للصفحة */
@@ -148,6 +148,7 @@ function settingsView(st) {
     <label><input type="checkbox" id="set-vib" ${vib ? 'checked' : ''}> اهتزاز الهاتف عند حلول دوري</label>
     <label><input type="checkbox" id="set-shake" ${shk ? 'checked' : ''}> رمي النرد بهزّ الهاتف — هزّ هاتفك عندما يحين رميك</label>
   </div>
+  <label class="f">اتجاه عرض شاشة اللوحة<select id="set-orient">${[['auto', 'تلقائي (حسب وضع الجهاز)'], ['portrait', 'عمودي Portrait'], ['landscape', 'أفقي Landscape']].map(([v, l]) => `<option value="${v}" ${(App.store.get('sa_orient') || 'auto') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
   ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="slow" ${spd === 'slow' ? 'selected' : ''}>بطيئة</option><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
   <div class="muted" style="font-size:13px">الرصيد الابتدائي وجائزة الوقوف المجاني يضبطهما المضيف من الردهة قبل بدء اللعبة.</div>
   <div class="muted">غرفة <bdi dir="ltr">${esc(st.code)}</bdi></div>
@@ -245,6 +246,7 @@ function onViewChange(e) {
     return;
   }
   if (t.id === 'set-speed') { App.speedV = t.value; App.store.set('sa_speed', t.value); send({ t: 'speed', v: t.value }); return; }
+  if (t.id === 'set-orient') { App.store.set('sa_orient', t.value); App.render(); return; }
   if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); App.render(); }
   else if (t.dataset.give !== undefined) { (t.checked ? tf.give.add(+t.dataset.give) : tf.give.delete(+t.dataset.give)); }
   else if (t.dataset.get !== undefined) { (t.checked ? tf.get.add(+t.dataset.get) : tf.get.delete(+t.dataset.get)); }
