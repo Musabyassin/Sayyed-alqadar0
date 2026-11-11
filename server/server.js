@@ -52,7 +52,7 @@ function newCode() { for (let i = 0; i < 50; i++) { const c = String(1000 + Math
 function newRoom() {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = newCode(); if (!code) return null;
-  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1.6 }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map() };
+  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1.6 }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map(), rejoin: null };
   rooms.set(code, room); return room;
 }
 const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
@@ -73,6 +73,8 @@ function stateFor(room, m) {
     out.manage = g.manageInfo(p);
     out.tradable = g.tradable(p);
   }
+  /* طلب عودة معلّق يظهر للمضيف وحده ليقرر إرجاع اللاعب أم لا */
+  if (m && m.host && room.rejoin) { const t = room.members[room.rejoin.idx]; if (t) out.rejoin = { id: room.rejoin.idx, name: t.name }; }
   return out;
 }
 function broadcast(room) {
@@ -84,7 +86,7 @@ function broadcast(room) {
     return;
   }
   const base = stateFor(room, null);
-  room.displays.forEach((ws) => { if (ws.readyState === 1) ws.send(JSON.stringify({ ...base, canBoard: room.hostDisplays.has(ws), ...(ws.spectator ? { spectator: true } : {}) })); });
+  room.displays.forEach((ws) => { if (ws.readyState === 1) ws.send(JSON.stringify({ ...base, canBoard: room.hostDisplays.has(ws), ...(ws.spectator ? { spectator: true, ...(room.rejoin && room.rejoin.ws === ws ? { pending: true } : {}) } : {}) })); });
   room.members.forEach((m) => { if (m.ws) send(m.ws, stateFor(room, m)); });
 }
 function schedule(room) { if (!room.bcast) room.bcast = setTimeout(() => broadcast(room), 25); }
@@ -96,6 +98,27 @@ function armAuto(room, pid) {
   if (m.ws) return;
   const t = setTimeout(() => { if (room.game && !m.ws) { m.auto = true; room.game.autoPlay(pid); } }, m.auto ? AUTO_FAST : AUTO_DELAY);
   room.timers.set(pid, t);
+}
+/* إنهاء طلب عودة معلّق (موافقة/رفض/انتهاء مهلة/انقطاع الطالب) */
+function clearRejoin(room, notify) {
+  const r = room.rejoin; if (!r) return; room.rejoin = null; clearTimeout(r.timer);
+  if (r.ws) { r.ws.rejoinFor = null; if (notify) send(r.ws, { t: 'ev', e: { e: 'toast', m: notify } }); }
+}
+/* استبعاد لاعب من لعبة جارية (طرد المضيف أو مغادرة صريحة): يخرج من اللعب وتعود
+   أملاكه للبنك عبر محرك اللعبة، ويبقى سجل مقعده موسوماً out حتى يطلب العودة ويوافق المضيف. */
+function kickFromGame(room, t, how) {
+  const idx = room.members.indexOf(t); if (idx < 0) return;
+  t.out = true; t.auto = false; clearTimeout(room.timers.get(idx));
+  if (room.rejoin && room.rejoin.idx === idx) clearRejoin(room);
+  if (room.trade && room.trade.toId === idx) room.trade.resolve(false);
+  if (t.ws) {
+    const w = t.ws; t.ws = null;
+    if (how === 'kick') send(w, { t: 'kicked', m: 'طردك المضيف من اللعبة' });
+    w.room = null; w.member = null; room.displays.delete(w);
+    try { w.close(); } catch (e) { /* ignore */ }
+  }
+  if (room.game) room.game.eliminate(idx, how === 'kick' ? `طرد المضيف ${t.name} من اللعبة` : `${t.name} غادر اللعبة`).catch(() => {});
+  broadcast(room);
 }
 function startGame(room) {
   const cfg = room.cfg;
@@ -111,13 +134,14 @@ function startGame(room) {
     }),
   };
   room.phase = 'playing';
-  room.members.forEach((m) => { m.auto = false; });
+  room.members.forEach((m) => { m.auto = false; m.out = false; });
   room.game = new Game({ players: room.members.map((m) => ({ name: m.name, bot: m.bot })), cash: cfg.cash, jackpot: cfg.jackpot, speed: cfg.speed }, io);
   room.game.run().catch((e) => { console.error('game error', e); emit(room, { e: 'toast', m: 'حدث خطأ في اللعبة' }); });
   broadcast(room);
 }
 function resetToLobby(room) {
   if (room.game) room.game.stop(); room.game = null; room.phase = 'lobby';
+  if (room.rejoin) clearRejoin(room);
   room.members = room.members.filter((m) => m.bot || m.ws);
   room.timers.forEach((t) => clearTimeout(t)); room.timers.clear();
   ensureHost(room); broadcast(room);
@@ -136,10 +160,39 @@ function attach(ws, room, member) {
     member.ws = ws; member.auto = false; clearTimeout(member.drop); clearTimeout(room.timers.get(room.members.indexOf(member)));
   } else room.displays.add(ws);
 }
+/* طلب عودة لاعب خرج من اللعبة: يدخل مشاهداً مؤقتاً، ويصل المضيفَ تنبيهُ وحالةٌ
+   فيها الطلب، فإذا وافق استعاد مقعده (وإن كان مستبعَداً عاد للعب من جديد)، وإلا بقي مشاهداً. */
+function requestRejoin(ws, room, member, name) {
+  const idx = room.members.indexOf(member);
+  attach(ws, room, null); ws.spectator = true; ws.rejoinFor = idx;
+  send(ws, { t: 'joined', code: room.code, spectator: true, pending: true, name });
+  send(ws, { t: 'chatHist', list: room.chat });
+  const timer = setTimeout(() => { if (room.rejoin && room.rejoin.ws === ws) { clearRejoin(room, 'انتهت مهلة طلب العودة — بقيت مشاهداً'); broadcast(room); } }, 90000);
+  room.rejoin = { idx, ws, timer };
+  const host = room.members.find((x) => x.host && x.ws);
+  if (host) send(host.ws, { t: 'ev', e: { e: 'toast', m: `🔔 ${member.name} يطلب العودة إلى اللعبة` } });
+  broadcast(room);
+}
 function join(ws, room, msg) {
   const name = String(msg.name || '').trim().slice(0, 14) || 'لاعب';
   let m = msg.token && room.members.find((x) => !x.bot && x.token === msg.token);
-  if (!m && room.phase === 'playing') m = room.members.find((x) => !x.bot && !x.ws && x.name === name);
+  let byName = null;
+  if (!m && room.phase === 'playing') byName = room.members.find((x) => !x.bot && !x.ws && x.name === name);
+  if (room.phase === 'playing' && room.game && !room.game.S.over) {
+    /* لاعب مستبعَد يعود برمزه، أو لاعب يدخل باسمه كما هو أثناء اللعب: لا يستعيد
+       مقعده مباشرة — يتحول الدخول إلى طلب عودة يقرره المضيف. */
+    const cand = (m && m.out) ? m : (!m ? byName : null);
+    if (cand) {
+      if (room.rejoin) {
+        attach(ws, room, null); ws.spectator = true;
+        send(ws, { t: 'joined', code: room.code, spectator: true, name });
+        send(ws, { t: 'chatHist', list: room.chat });
+        send(ws, { t: 'ev', e: { e: 'toast', m: 'يوجد طلب عودة آخر بانتظار قرار المضيف' } });
+        broadcast(room); return;
+      }
+      return requestRejoin(ws, room, cand, name);
+    }
+  }
   if (!m && (room.phase !== 'lobby' || msg.spectator)) {
     /* دخول غرفة بدأت لعبتها (أو عودة مشاهد): يدخل مشاهداً فقط — يتابع اللوحة
        والحالة دون مقعد لعب ودون أي قدرة على الإجابة أو الشات أو الصفقات. */
@@ -220,7 +273,23 @@ wss.on('connection', (ws, req) => {
       case 'cfg': if (m.host && room.phase === 'lobby') { room.cfg.cash = [1000, 1500, 2000, 3000].includes(msg.cash) ? msg.cash : 1500; room.cfg.jackpot = !!msg.jackpot; broadcast(room); } return;
       case 'speed': if (m.host) { room.cfg.speed = msg.v === 'slow' ? 2.6 : msg.v === 'fast' ? 0.8 : msg.v === 'turbo' ? 0 : 1.6; if (g) g.speed = room.cfg.speed; broadcast(room); } return;
       case 'addBot': if (m.host && room.phase === 'lobby' && room.members.length < 6) { const used = new Set(room.members.map((x) => x.name)); const nm = NAMES.find((x) => !used.has(x)) || 'آلي ' + room.members.length; room.members.push({ name: nm, bot: true, ws: null }); broadcast(room); } return;
-      case 'kick': if (m.host && room.phase === 'lobby') { const t = room.members[Number(msg.id)]; if (t && t !== m) { room.members.splice(room.members.indexOf(t), 1); if (t.ws) { send(t.ws, { t: 'kicked' }); t.ws.room = null; t.ws.member = null; } broadcast(room); } } return;
+      case 'kick': if (m.host) { const t = room.members[Number(msg.id)]; if (t && t !== m) { if (room.phase === 'lobby') { room.members.splice(room.members.indexOf(t), 1); if (t.ws) { send(t.ws, { t: 'kicked' }); t.ws.room = null; t.ws.member = null; } broadcast(room); } else if (!t.out) kickFromGame(room, t, 'kick'); } } return;
+      case 'rejoinReply': {
+        /* قرار المضيف بشأن طلب عودة: قبول = استعادة المقعد (وإحياء اللاعب المستبعَد
+           بنقد ابتدائي من الانطلاق)، رفض = بقاء الطالب مشاهداً. */
+        if (!m.host || !room.rejoin) return;
+        const req = room.rejoin, t = room.members[req.idx], w = req.ws;
+        clearRejoin(room);
+        if (msg.ok && t && w && w.readyState === 1) {
+          if (t.out && g && !g.S.over) g.reinstate(req.idx);
+          t.out = false;
+          w.spectator = false; attach(w, room, t); ensureHost(room);
+          send(w, { t: 'joined', code: room.code, token: t.token, id: req.idx, name: t.name });
+          emit(room, { e: 'toast', m: `عاد ${t.name} إلى اللعبة بقرار المضيف` });
+        } else if (w) send(w, { t: 'ev', e: { e: 'toast', m: 'رفض المضيف عودتك إلى اللعبة — تتابع كمشاهد' } });
+        broadcast(room);
+        return;
+      }
       case 'start': if (m.host && room.phase === 'lobby' && room.members.length >= 2) startGame(room); return;
       case 'again': if (m.host && g && g.S.over) resetToLobby(room); return;
       case 'ans': if (g) { g.answer(room.members.indexOf(m), msg.v); } return;
@@ -241,6 +310,7 @@ wss.on('connection', (ws, req) => {
 function leave(ws, dropped) {
   const room = ws.room, m = ws.member; if (!room) return;
   room.displays.delete(ws); room.hostDisplays.delete(ws);
+  if (room.rejoin && room.rejoin.ws === ws) clearRejoin(room);
   if (m && m.ws === ws) {
     m.ws = null;
     const idx = room.members.indexOf(m);
@@ -249,8 +319,11 @@ function leave(ws, dropped) {
       if (dropped) m.drop = setTimeout(rm, 30000); else rm();
     } else {
       if (m.host) { m.host = false; ensureHost(room); }
-      if (room.game) armAuto(room, idx);
-      if (room.trade && room.trade.toId === idx) room.trade.resolve(false);
+      /* مغادرة صريحة أثناء اللعب = انسحاب نهائي من الجولة (تعود أملاكه للبنك)،
+         والعودة بعدها بطلب يوافق عليه المضيف. أما انقطاع الاتصال فيبقي المقعد
+         ويلعب الذكاء المؤقت مكانه كالسابق. */
+      if (!dropped && room.game && !room.game.S.over && !m.out) kickFromGame(room, m, 'leave');
+      else { if (room.game) armAuto(room, idx); if (room.trade && room.trade.toId === idx) room.trade.resolve(false); }
     }
   }
   if (!dropped) { ws.room = null; ws.member = null; }
