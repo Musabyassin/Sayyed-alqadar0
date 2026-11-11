@@ -27,8 +27,10 @@ body{font-size:2.1vh;cursor:none}
 .qrbox{background:#fff;border-radius:2vh;padding:1.6vh;box-shadow:var(--shadow);text-align:center;color:#111}
 .qrbox img{display:block;width:34vh;height:34vh}
 .qrbox span{display:block;margin-top:.8vh;font-weight:700;font-size:2.4vh}
-#game{display:grid;grid-template-columns:min(calc(100vh - 4.4vh),62vw) minmax(0,1fr);gap:2.6vh;direction:ltr}
-#side{direction:rtl;display:flex;flex-direction:column;gap:1.6vh;min-height:0;min-width:0}
+#game{display:flex;gap:2.6vh;direction:ltr}
+#bwrap{flex:1;min-width:0;display:flex;align-items:center;justify-content:center}
+#bwrap .board{width:min(100%,calc(100vh - 4.4vh))}
+#side{flex:0 0 40vh;direction:rtl;display:flex;flex-direction:column;gap:1.6vh;min-height:0;min-width:0}
 .badge{display:flex;align-items:center;gap:1.6vh;padding:1.2vh 1.8vh;border-radius:1.6vh;background:var(--surface);border:1px solid var(--line)}
 .badge b{font-family:var(--f-display);font-size:5vh;letter-spacing:.12em;color:var(--accent);direction:ltr}
 .badge span{color:var(--muted);font-size:1.9vh;line-height:1.5}
@@ -75,12 +77,12 @@ body{font-size:2.1vh;cursor:none}
 #win h2{font-family:var(--f-display);font-size:11vh;margin:0;color:var(--accent)}
 #win .st{display:grid;gap:1vh;min-width:46vh;font-size:3vh}
 #win .st div{display:flex;gap:2vh;justify-content:space-between;padding:1vh 2vh;background:var(--surface);border-radius:1.4vh}
-@media (max-width:900px) and (orientation:portrait){body{font-size:2vh;overflow:auto}#lobby{grid-template-columns:1fr}#game{grid-template-columns:1fr;height:auto}html,body{overflow:auto}}
+@media (max-width:900px) and (orientation:portrait){body{font-size:2vh;overflow:auto}#lobby{grid-template-columns:1fr}#game{flex-direction:column;height:auto}#bwrap .board{width:100%}#side{flex:none}html,body{overflow:auto}}
 </style>
 </head>
 <body>
 <section id="lobby" hidden></section>
-<section id="game" hidden><div id="board"></div>
+<section id="game" hidden><div id="bwrap"><div id="board"></div></div>
   <aside id="side">
     <div class="badge" id="badge"></div>
     <div id="players"></div>
@@ -161,7 +163,7 @@ function centerHTML() {
   if (f && f.k === 'deed') focus = `<div class="q">هل يشتري ${esc(S.players[f.pid].name)}؟</div>${Board.deedHTML(f.i, S)}`;
   else if (f && f.k === 'card') focus = `<div class="cardbox"><small>${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'} · ${esc(S.players[f.pid].name)}</small><p>${esc(f.text)}</p></div>`;
   else if (f && f.k === 'auction') { const h = f.high != null ? S.players[f.high] : null; focus = `<div class="q">مزاد على ${esc(SQ[f.i].n)}</div><div class="bidnum">${f.bid}</div><div class="sub">${h ? 'الأعلى: ' + esc(h.name) : 'لا عروض بعد'} · الدور على ${esc(S.players[f.turn].name)}</div>`; }
-  else if (S.trade) focus = `<div class="q">صفقة قيد التفاوض</div><div class="sub">${esc(S.players[S.trade.from].name)} ⇄ ${esc(S.players[S.trade.to].name)}</div>`;
+  else if (S.trade) focus = `<div class="q">${S.trade.counter ? 'عرض مضاد قيد التفاوض' : 'صفقة قيد التفاوض'}</div><div class="sub">${esc(S.players[S.trade.from].name)} ⇄ ${esc(S.players[S.trade.to].name)}</div>`;
   else if (pend) { const w = S.players[pend.pid]; focus = `<div class="sub">بانتظار ${esc(w.name)}${{ roll: ' ليرمي النرد', end: ' لينهي دوره', jail: ' ليقرر في السجن', debt: ' لتسديد دين', buy: '', bid: '' }[pend.kind] || ''}</div>`; }
   let acts = '';
   if (canBoard && pend && !S.over) {
