@@ -92,7 +92,19 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
   .boardwrap.fit .binfo{display:flex;flex-direction:column;width:45%;min-width:0;overflow:auto}
   .boardwrap.fit .pstrip.mini{grid-template-columns:1fr}
   .boardwrap.fit .bdbox{align-items:center}
+  /* فرض العمودي من الإعدادات يلغي تنسيق الأفقي التلقائي */
+  .boardwrap.fit.o-port{flex-direction:column}
+  .boardwrap.fit.o-port .binfo{display:contents}
+  .boardwrap.fit.o-port .pstrip.mini{grid-template-columns:1fr 1fr}
+  .boardwrap.fit.o-port .bdbox{align-items:flex-start}
 }
+/* فرض الأفقي من الإعدادات: عمود جانبي + لوحة بجانبه في أي وضع للجهاز */
+.boardwrap.fit.o-land{flex-direction:row;gap:8px}
+.boardwrap.fit.o-land .binfo{display:flex;flex-direction:column;width:45%;min-width:0;overflow:auto}
+.boardwrap.fit.o-land .pstrip.mini{grid-template-columns:1fr}
+.boardwrap.fit.o-land .bdbox{align-items:center}
+/* مساحة أوسع للوحة على الهاتف */
+.boardwrap.fit .bdbox{margin-inline:-8px}
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
