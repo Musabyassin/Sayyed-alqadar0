@@ -118,7 +118,10 @@ function fitBoard() {
   const hdr = $('#hdr'), tabs = $('#tabs');
   const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (tabs && !tabs.hidden ? tabs.offsetHeight : 0) - 2;
   wrap.style.height = Math.max(190, avail) + 'px';
-  bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px';
+  const wide = window.innerWidth > window.innerHeight && window.innerHeight <= 540;
+  bd.classList.toggle('wide', wide);
+  if (wide) { bd.style.width = box.clientWidth + 'px'; bd.style.height = box.clientHeight + 'px'; }
+  else { bd.style.height = ''; bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px'; }
 }
 function logView(S) { return `<div class="card"><div class="log">${S.log.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>`; }
 
