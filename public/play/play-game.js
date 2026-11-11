@@ -6,7 +6,7 @@ const SQ = GameData.SQ, GC = GameData.GC, GROUPS = GameData.GROUPS, COLORS = Gam
 const fmt = (n) => Number(n).toLocaleString('en-US');
 let tab = 'board', sentSeq = null, lastAutoSeq = null;
 const tf = { to: null, give: new Set(), get: new Set(), gc: 0, rc: 0 };
-App.resetTrade = () => { tf.give.clear(); tf.get.clear(); tf.gc = 0; tf.rc = 0; };
+App.resetTrade = () => { tf.give.clear(); tf.get.clear(); tf.gc = 0; tf.rc = 0; App.counterCtx = null; App.counterSent = null; };
 const ownedOf = (S, id) => Object.keys(S.owner).map(Number).filter((i) => S.owner[i] === id).sort((a, b) => a - b);
 const tradableOf = (S, id) => ownedOf(S, id).filter((i) => !SQ[i].g || !GROUPS[SQ[i].g].some((j) => (S.houses[j] || 0) > 0));
 const colorOf = (i) => (SQ[i].g ? GC[SQ[i].g] : SQ[i].t === 'rail' ? '#59627a' : '#7a9a98');
@@ -63,17 +63,21 @@ function propsHTML(st, withHint) {
   return `${withHint && !can ? '<div class="muted" style="font-size:13px">أزرار الإدارة تعمل في دورك فقط.</div>' : ''}<div style="display:grid;gap:8px">${rows}</div><div class="muted" style="font-size:12px">البيوت المتاحة: ${S.houseBank} · الفنادق المتاحة: ${S.hotelBank}</div>`;
 }
 function tradeView(st) {
-  const S = st.s, me = st.me, can = !!st.prompt && !App.tradeBusy;
+  const S = st.s, me = st.me, can = !App.tradeBusy && !App.counterSent && (!!st.prompt || !!App.counterCtx);
   const others = S.players.filter((q) => q.id !== me && !q.bankrupt);
   if (!others.length) return '<div class="card muted">لا يوجد لاعبون للتبادل معهم.</div>';
   if (tf.to == null || !others.some((q) => q.id === tf.to)) { tf.to = others[0].id; tf.give.clear(); tf.get.clear(); }
   const mine = tradableOf(S, me), theirs = tradableOf(S, tf.to), meP = S.players[me], toP = S.players[tf.to];
   tf.give.forEach((i) => { if (!mine.includes(i)) tf.give.delete(i); }); tf.get.forEach((i) => { if (!theirs.includes(i)) tf.get.delete(i); });
   const list = (arr, set, key) => arr.map((i) => `<label class="pk"><input type="checkbox" data-${key}="${i}" ${set.has(i) ? 'checked' : ''}><span class="pawn" style="background:${colorOf(i)};border-radius:4px;width:13px;height:13px"></span>${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : ''}</label>`).join('') || '<span class="muted" style="font-size:13px">لا عقارات قابلة للتبادل</span>';
-  return `<div class="card"><label class="f">الطرف الآخر<select id="tto">${others.map((q) => `<option value="${q.id}" ${q.id === tf.to ? 'selected' : ''}>${esc(q.name)}</option>`).join('')}</select></label>
+  let head = '';
+  if (App.counterCtx) { const cp = S.players[App.counterCtx.from]; head = `<div class="focus-note">🤝 تفاوض مع ${esc(cp ? cp.name : '')}: الشروط التالية هي عرضه معكوسة عليك — عدّلها ثم أرسل عرضك المضاد، وله أن يقبل أو يرفض أو يفاوض من جديد.</div><button class="btn" id="tcancel">إلغاء المفاوضة</button>`; }
+  else if (App.counterSent) { const cp = S.players[App.counterSent.to]; head = `<div class="focus-note">أرسلت عرضك المضاد إلى ${esc(cp ? cp.name : '')} — بانتظار ردّه.</div>`; }
+  const btnLabel = App.counterSent || App.tradeBusy ? 'بانتظار الرد...' : App.counterCtx ? '🤝 أرسل العرض المضاد' : 'اعرض الصفقة';
+  return `${head}<div class="card"><label class="f">الطرف الآخر<select id="tto">${others.map((q) => `<option value="${q.id}" ${q.id === tf.to ? 'selected' : ''}>${esc(q.name)}</option>`).join('')}</select></label>
     <div class="tg"><div class="tcol"><b>تعطي</b>${list(mine, tf.give, 'give')}<label class="f">نقد<input type="number" id="tgc" min="0" max="${meP.money}" value="${tf.gc}" inputmode="numeric"></label></div>
     <div class="tcol"><b>تأخذ من ${esc(toP.name)}</b>${list(theirs, tf.get, 'get')}<label class="f">نقد<input type="number" id="trc" min="0" max="${toP.money}" value="${tf.rc}" inputmode="numeric"></label></div></div>
-    <button class="btn primary" id="tgo" ${can ? '' : 'disabled'}>${App.tradeBusy ? 'بانتظار الرد...' : 'اعرض الصفقة'}</button>${st.prompt ? '' : '<span class="muted" style="font-size:13px">الصفقات متاحة في دورك فقط.</span>'}</div>`;
+    <button class="btn primary" id="tgo" ${can ? '' : 'disabled'}>${btnLabel}</button>${st.prompt || App.counterCtx || App.counterSent ? '' : '<span class="muted" style="font-size:13px">الصفقات متاحة في دورك فقط.</span>'}</div>`;
 }
 /* ----- وسط لوحة الهاتف: كل المعلومات والقرارات داخل اللوحة نفسها ----- */
 function centerCardsHTML(st) {
@@ -84,6 +88,7 @@ function centerCardsHTML(st) {
 function centerDecisionHTML(st) {
   const S = st.s, me = S.players[st.me], p = st.prompt;
   if (S.over) { const w = S.players[S.winner]; return `<div class="cact"><div class="cwin">${S.winner === st.me ? '🏆 مبروك، فزت!' : `الفائز: ${esc(w.name)}`}</div><div class="crow2">${st.host ? '<button class="cbtn pri" data-new="1">لعبة جديدة</button>' : ''}<button class="cbtn" data-leave="1">مغادرة</button></div></div>`; }
+  if (st.me == null) return '<div class="cact"><div class="cnote">👁 أنت مشاهد في هذه اللعبة — بدأت قبل انضمامك</div></div>';
   if (me.bankrupt) return '<div class="cact"><div class="cnote">خرجت من اللعبة — تابع اللوحة حتى النهاية</div></div>';
   if (!p) { const pend = S.pending, w = pend ? S.players[pend.pid] : null; return w ? `<div class="cact"><div class="cnote">بانتظار ${esc(w.name)}...</div></div>` : ''; }
   const dis = sentSeq === p.seq;
@@ -146,6 +151,7 @@ function settingsView(st) {
 const chatLine = (c, me) => `<div class="cm2 ${c.id === me ? 'mine' : ''}"><b style="color:${COLORS[c.id] || 'var(--ink)'}">${esc(c.n)}${c.id === me ? ' (أنت)' : ''}:</b>${esc(c.m)}</div>`;
 function chatView(st) {
   const list = App.chat.length ? App.chat.map((c) => chatLine(c, st.me)).join('') : '<div class="muted" style="text-align:center;padding:12px">لا رسائل بعد. اكتب أول رسالة!</div>';
+  if (st.me == null) return `<div class="card"><b>شات الغرفة</b><div class="cmsg" id="cmsg">${list}</div><div class="muted" style="font-size:13px;text-align:center">المشاهدون يتابعون فقط ولا يستطيعون الكتابة.</div></div>`;
   return `<div class="card"><b>شات الغرفة</b><div class="cmsg" id="cmsg">${list}</div><div class="crow"><input type="text" id="cin" maxlength="300" placeholder="اكتب رسالة للاعبين..." autocomplete="off"><button class="btn primary" id="csend">إرسال</button></div></div>`;
 }
 function sendChat() {
@@ -162,7 +168,7 @@ App.onChat = (e) => {
 
 /* ----- الرسم الرئيسي ----- */
 App.renderGame = function renderGame() {
-  const st = App.st, S = st.s, me = S.players[st.me];
+  const st = App.st, S = st.s, me = st.me != null ? S.players[st.me] : null;
   if (!$('#hdr')) {
     App.root.innerHTML = '<div class="top" id="hdr"></div><div id="view"></div>';
     $('#view').addEventListener('click', onViewClick);
@@ -170,11 +176,13 @@ App.renderGame = function renderGame() {
     $('#view').addEventListener('input', onViewInput);
     $('#view').addEventListener('keydown', (e) => { if (e.target.id === 'cin' && e.key === 'Enter') { e.preventDefault(); sendChat(); } });
   }
-  $('#hdr').innerHTML = `<span class="pawn" style="background:${me.color}"></span><b>${esc(me.name)}</b><span class="code">غرفة ${esc(st.code)}</span><span class="money">${fmt(me.money)}</span>`;
+  $('#hdr').innerHTML = me ? `<span class="pawn" style="background:${me.color}"></span><b>${esc(me.name)}</b><span class="code">غرفة ${esc(st.code)}</span><span class="money">${fmt(me.money)}</span>` : `<span class="pawn" style="background:#8a97ad"></span><b>مشاهد</b><span class="code">غرفة ${esc(st.code)}</span><span class="money">👁</span>`;
   const p = st.prompt;
   if (p && p.seq !== lastAutoSeq) { lastAutoSeq = p.seq; if (['roll', 'buy', 'bid', 'jail', 'debt'].includes(p.kind)) tab = 'board'; }
   if (S.over) tab = 'board';
-  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${ICONS[k]}${l}${k === 'board' && p && tab !== 'board' ? '<span class="dot"></span>' : ''}${k === 'chat' && App.chatUnread > 0 && tab !== 'chat' ? '<span class="dot"></span>' : ''}</button>`).join('');
+  const myTabs = me ? TABS : TABS.filter(([k]) => ['board', 'chat', 'log'].includes(k));
+  if (!myTabs.some(([k]) => k === tab)) tab = 'board';
+  $('#tabs').innerHTML = myTabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}">${ICONS[k]}${l}${k === 'board' && p && tab !== 'board' ? '<span class="dot"></span>' : ''}${k === 'chat' && App.chatUnread > 0 && tab !== 'chat' ? '<span class="dot"></span>' : ''}</button>`).join('');
   const v = $('#view'), ae = document.activeElement;
   const typing = ae && v.contains(ae) && ((tab === 'trade' && (ae.tagName === 'INPUT' && ae.type !== 'checkbox' || ae.tagName === 'SELECT')) || (tab === 'chat' && ae.id === 'cin'));
   if (!typing) {
@@ -185,13 +193,16 @@ App.renderGame = function renderGame() {
     else if (tab === 'log') v.innerHTML = logView(S);
     else { v.innerHTML = boardView(st); paintBoard(st); }
   } else if (tab === 'board') paintBoard(st);
-  /* عرض صفقة واردة */
+  /* عرض صفقة واردة (مع خيار المفاوضة بعرض مضاد) */
   const inc = S.trade && S.trade.to === st.me ? S.trade : null;
+  if (!S.trade) App.counterSent = null;
+  if (!inc) { App.tradeDismiss = null; App.counterCtx = null; }
+  if (inc && App.counterSent) App.counterSent = null;
   if (inc) {
     const key = 'tin' + JSON.stringify(inc);
-    if (App.modalKey !== key) {
+    if (App.modalKey !== key && App.tradeDismiss !== key) {
       App.modalKey = key; const from = S.players[inc.from];
-      modal(`<h2>عرض صفقة من ${esc(from.name)}</h2><div class="card" style="margin:0"><div><b>يعطيك:</b> ${esc(names(inc.give))}${inc.gc ? ` + ${fmt(inc.gc)} نقداً` : ''}</div><div><b>ويأخذ منك:</b> ${esc(names(inc.get))}${inc.rc ? ` + ${fmt(inc.rc)} نقداً` : ''}</div></div><div class="row"><button class="btn" data-tr="0">ارفض</button><button class="btn primary" data-tr="1">اقبل</button></div>`);
+      modal(`<h2>${inc.counter ? 'عرض مضاد' : 'عرض صفقة'} من ${esc(from.name)}</h2><div class="card" style="margin:0"><div><b>يعطيك:</b> ${esc(names(inc.give))}${inc.gc ? ` + ${fmt(inc.gc)} نقداً` : ''}</div><div><b>ويأخذ منك:</b> ${esc(names(inc.get))}${inc.rc ? ` + ${fmt(inc.rc)} نقداً` : ''}</div></div><div class="row"><button class="btn" data-tr="0">ارفض</button><button class="btn" data-tr="2">🤝 مفاوضة</button><button class="btn primary" data-tr="1">اقبل</button></div>`);
     }
   } else if (App.modalKey && App.modalKey.startsWith('tin')) closeModal();
 };
@@ -210,8 +221,14 @@ function onViewClick(e) {
   }
   if (t.closest('[data-new]')) return send({ t: 'again' });
   if (t.closest('[data-leave]')) { send({ t: 'leave' }); App.room = null; App.store.del('sa_room'); App.st = null; App.lobby = null; App.render(); return; }
+  if (t.closest('#tcancel')) { App.counterCtx = null; App.resetTrade(); App.render(); return; }
   if (t.closest('#tgo')) {
-    send({ t: 'trade', to: tf.to, give: [...tf.give], get: [...tf.get], gc: Math.max(0, Math.floor(tf.gc) || 0), rc: Math.max(0, Math.floor(tf.rc) || 0) });
+    const gc = Math.max(0, Math.floor(tf.gc) || 0), rc = Math.max(0, Math.floor(tf.rc) || 0);
+    if (App.counterCtx) {
+      send({ t: 'tradeReply', counter: true, terms: { give: [...tf.give], get: [...tf.get], gc, rc } });
+      App.counterSent = { to: tf.to }; App.counterCtx = null; toast('أُرسل عرضك المضاد'); App.render(); return;
+    }
+    send({ t: 'trade', to: tf.to, give: [...tf.give], get: [...tf.get], gc, rc });
     App.tradeBusy = true; App.render(); return;
   }
   if (t.closest('#csend')) { sendChat(); return; }
@@ -234,7 +251,7 @@ function onViewChange(e) {
   }
   if (t.id === 'set-speed') { App.speedV = t.value; App.store.set('sa_speed', t.value); send({ t: 'speed', v: t.value }); return; }
   if (t.id === 'set-orient') { App.store.set('sa_orient', t.value); App.render(); return; }
-  if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); App.render(); }
+  if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); if (App.counterCtx && App.counterCtx.from !== tf.to) App.counterCtx = null; App.render(); }
   else if (t.dataset.give !== undefined) { (t.checked ? tf.give.add(+t.dataset.give) : tf.give.delete(+t.dataset.give)); }
   else if (t.dataset.get !== undefined) { (t.checked ? tf.get.add(+t.dataset.get) : tf.get.delete(+t.dataset.get)); }
 }
@@ -243,6 +260,16 @@ $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-
 $('#modal').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) { if (e.target.id === 'modal' && App.modalKey === 'deed') closeModal(); return; }
   if (b.dataset.close) closeModal();
+  else if (b.dataset.tr === '2') {
+    const S = App.st.s, inc = S.trade && S.trade.to === App.st.me ? S.trade : null;
+    if (inc) {
+      App.tradeDismiss = 'tin' + JSON.stringify(inc);
+      App.counterCtx = { from: inc.from };
+      tf.to = inc.from; tf.give = new Set(inc.get); tf.get = new Set(inc.give); tf.gc = inc.rc; tf.rc = inc.gc;
+      tab = 'trade'; toast('عدّل شروط العرض المضاد ثم أرسله');
+    }
+    closeModal(); App.modalKey = null; App.render();
+  }
   else if (b.dataset.tr !== undefined) { send({ t: 'tradeReply', ok: b.dataset.tr === '1' }); const S = App.st.s, k = S.trade && S.trade.to === App.st.me ? 'tin' + JSON.stringify(S.trade) : 'tin-done'; closeModal(); App.modalKey = k; }
 });
 })();
