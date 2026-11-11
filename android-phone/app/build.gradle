@@ -1,0 +1,27 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.sayyed.alaqar.phone'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.sayyed.alaqar.phone'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+        // عنوان الخادم يُمرَّر عند البناء: gradle assembleDebug -PSERVER_URL=https://example.com
+        // وإن تُرك فارغاً يسأل التطبيق عن العنوان عند أول تشغيل.
+        buildConfigField 'String', 'SERVER_URL', "\"${project.findProperty('SERVER_URL') ?: ''}\""
+    }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        release { minifyEnabled false }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
