@@ -69,6 +69,18 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 .boardwrap{position:relative}
 .boardwrap.fit{display:flex;flex-direction:column}
 .boardwrap.fit .bdbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin-inline:-8px}
+/* أفقي بملء الشاشة: إلغاء حد العرض وضغط الشريط العلوي والتبويبات حتى تكبر اللوحة لأقصى حد */
+@media (orientation:landscape) and (max-height:540px){
+  body{max-width:none;padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px));padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))}
+  .top{padding:4px 0 5px}
+  .top b{font-size:15px}
+  .top .money{font-size:20px}
+  .top .pawn{width:18px;height:18px}
+  .tabs{max-width:none}
+  .tabs button{min-height:46px;font-size:11px;gap:0}
+  .tabs button svg{width:19px;height:19px}
+  .boardwrap.fit .bdbox{margin-inline:0}
+}
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
