@@ -118,12 +118,44 @@ function playersStrip(st) {
   const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h} بيوت)` : ''}`; };
   return `<div class="pstrip mini">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `(${own.length}) ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
-function boardView(st) {
-  return `<div class="boardwrap ${App.zoom ? '' : 'fit'} o-${App.store.get('sa_orient') || 'auto'}"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير اللوحة'}</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
+/* ----- وسط لوحة الهاتف: كل المعلومات والقرارات داخل اللوحة نفسها ----- */
+function centerCardsHTML(st) {
+  const S = st.s;
+  const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h})` : ''}`; };
+  return `<div class="ccards">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="ccard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${p.bankrupt ? 'مفلس' : fmt(p.money)}</span></div><div class="pn">${own.length ? own.map(propName).join('، ') : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
-function paintBoard(S) {
-  const cur = S.players[S.cur];
-  Board.render($('#bd'), S, `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}${Board.centerInfo(S)}<div class="msg">${esc(S.log[0] || '')}</div>`);
+function centerDecisionHTML(st) {
+  const S = st.s, me = S.players[st.me], p = st.prompt;
+  if (S.over) { const w = S.players[S.winner]; return `<div class="cact"><div class="cwin">${S.winner === st.me ? '🏆 مبروك، فزت!' : `الفائز: ${esc(w.name)}`}</div><div class="crow2">${st.host ? '<button class="cbtn pri" data-new="1">لعبة جديدة</button>' : ''}<button class="cbtn" data-leave="1">مغادرة</button></div></div>`; }
+  if (me.bankrupt) return '<div class="cact"><div class="cnote">خرجت من اللعبة — تابع اللوحة حتى النهاية</div></div>';
+  if (!p) { const pend = S.pending, w = pend ? S.players[pend.pid] : null; return w ? `<div class="cact"><div class="cnote">بانتظار ${esc(w.name)}...</div></div>` : ''; }
+  const dis = sentSeq === p.seq;
+  const b = (v, label, cls, off) => `<button class="cbtn ${cls || ''}" data-ans="${v}" ${off || dis ? 'disabled' : ''}>${label}</button>`;
+  if (p.kind === 'roll') return `<div class="cact">${b('roll', 'ارمِ النرد 🎲', 'pri')}</div>`;
+  if (p.kind === 'end') return `<div class="cact">${b('end', 'إنهاء الدور ✓', 'pri')}</div>`;
+  if (p.kind === 'buy') return `<div class="cact"><div class="cq">تشتري ${esc(SQ[p.idx].n)} بـ ${p.price}؟</div><div class="crow2">${b('buy', 'اشترِ', 'pri', me.money < p.price)}${b('auction', 'مزاد')}</div><div class="cnote">المس المربع لعرض صك الملكية كاملاً</div></div>`;
+  if (p.kind === 'jail') return `<div class="cact"><div class="cq">أنت في السجن</div><div class="crow2">${b('pay', 'ادفع 50', '', me.money < 50)}${b('card', 'بطاقة الخروج', '', !me.jc)}${b('roll', 'ارمِ النرد', 'pri')}</div></div>`;
+  if (p.kind === 'bid') { const hi = p.high != null ? S.players[p.high] : null; return `<div class="cact"><div class="cq">مزاد ${esc(SQ[p.idx].n)}: <b>${p.cur}</b>${hi ? ` · الأعلى ${esc(hi.name)}` : ''}</div><div class="crow2">${[10, 50, 100].map((n) => b(n, `+${n}`, 'pri', me.money < p.cur + n)).join('')}${b(0, 'انسحب')}</div></div>`; }
+  if (p.kind === 'debt') return `<div class="cact"><div class="cq bad">عليك دفع ${fmt(p.need)} — رصيدك ${fmt(me.money)}</div><div class="crow2">${b('pay', `ادفع ${fmt(p.need)}`, 'pri', me.money < p.need)}${b('bankrupt', 'إفلاس', 'dgr')}</div><div class="cnote">اجمع المبلغ من تبويب «أملاكي»: بيع مبانٍ أو رهن أو بيع للبنك</div></div>`;
+  return '';
+}
+function centerHTMLPhone(st) {
+  const S = st.s, cur = S.players[S.cur], f = S.focus;
+  let h = `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}${centerCardsHTML(st)}`;
+  if (f && f.k === 'card') h += `<div class="cnote">${esc(S.players[f.pid].name)} سحب ${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'}: ${esc(f.text)}</div>`;
+  return h + `${centerDecisionHTML(st)}<div class="msg">${esc(S.log[0] || '')}</div>`;
+}
+const orientMode = () => App.store.get('sa_orient') || 'auto';
+const legacyLayout = () => orientMode() === 'landscape' && !App.zoom;
+function boardView(st) {
+  if (legacyLayout()) return `<div class="boardwrap fit o-land"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">تكبير اللوحة</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
+  return `<div class="boardwrap ${App.zoom ? '' : 'fit'} o-${orientMode()}"><div class="bdbox"><div id="bd"></div></div><button class="btn sm zoomfab" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير'}</button></div>`;
+}
+function paintBoard(st) {
+  const S = st.s, cur = S.players[S.cur];
+  Board.render($('#bd'), S, legacyLayout()
+    ? `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}${Board.centerInfo(S)}<div class="msg">${esc(S.log[0] || '')}</div>`
+    : centerHTMLPhone(st));
   fitBoard();
 }
 /* مقاس الشاشة: اللوحة وبقية العناصر داخل ارتفاع الشاشة تماماً بلا تمرير للصفحة */
@@ -196,8 +228,8 @@ App.renderGame = function renderGame() {
     else if (tab === 'gear') v.innerHTML = settingsView(st);
     else if (tab === 'chat') { v.innerHTML = chatView(st); const box = $('#cmsg'); if (box) box.scrollTop = box.scrollHeight; }
     else if (tab === 'log') v.innerHTML = logView(S);
-    else { v.innerHTML = boardView(st); paintBoard(S); }
-  } else if (tab === 'board') paintBoard(S);
+    else { v.innerHTML = boardView(st); paintBoard(st); }
+  } else if (tab === 'board') paintBoard(st);
   /* عرض صفقة واردة */
   const inc = S.trade && S.trade.to === st.me ? S.trade : null;
   if (inc) {
