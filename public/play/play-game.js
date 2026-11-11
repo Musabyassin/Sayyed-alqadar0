@@ -116,9 +116,9 @@ function fitBoard() {
   const wrap = $('.boardwrap'), bd = $('#bd'); if (!wrap || !bd) return;
   const box = bd.parentElement;
   const hdr = $('#hdr'), tabs = $('#tabs');
-  const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (tabs && !tabs.hidden ? tabs.offsetHeight : 0) - 2;
-  wrap.style.height = Math.max(190, avail) + 'px';
   const wide = window.innerWidth > window.innerHeight && window.innerHeight <= 540;
+  const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (!wide && tabs && !tabs.hidden ? tabs.offsetHeight : 0) - 2;
+  wrap.style.height = Math.max(190, avail) + 'px';
   bd.classList.toggle('wide', wide);
   if (wide) { bd.style.width = box.clientWidth + 'px'; bd.style.height = box.clientHeight + 'px'; }
   else { bd.style.height = ''; bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px'; }
