@@ -120,12 +120,8 @@ function fitBoard() {
   const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (!wide && tabs && !tabs.hidden ? tabs.offsetHeight : 0) - (wide ? 8 : 2);
   wrap.style.height = Math.max(190, avail) + 'px';
   bd.classList.toggle('wide', wide);
-  if (wide) { /* مسرح 16:9: أكبر مستطيل 16:9 داخل المساحة المتاحة */
-    let w = Math.min(box.clientWidth, box.clientHeight * 16 / 9), h = w * 9 / 16;
-    if (h > box.clientHeight) { h = box.clientHeight; w = h * 16 / 9; }
-    bd.style.width = Math.round(w) + 'px'; bd.style.height = Math.round(h) + 'px';
-  }
-  else { bd.style.height = ''; bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px'; }
+  /* مربعة دائماً (aspect-ratio في CSS): المقاس = الأصغر من العرض والارتفاع المتاحين */
+  bd.style.height = ''; bd.style.width = Math.max(100, Math.min(box.clientWidth, box.clientHeight)) + 'px';
 }
 function logView(S) { return `<div class="card"><div class="log">${S.log.map((l) => `<div>${esc(l)}</div>`).join('')}</div></div>`; }
 
