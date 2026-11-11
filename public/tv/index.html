@@ -168,7 +168,7 @@ function centerHTML() {
     if (pend.kind === 'roll') acts = `<div class="bbtns"><button class="bbtn" data-tvans="roll">ارمِ النرد 🎲</button></div>`;
     else if (pend.kind === 'end') acts = `<div class="bbtns"><button class="bbtn end" data-tvans="end">إنهاء الدور ✓</button></div>`;
   }
-  return `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${p.color}"></span><span>دور ${esc(p.name)}</span></div>${Board.diceHTML(S)}${acts}<div class="focus">${focus}</div><div class="msg">${esc(S.log[0] || '')}</div>`;
+  return `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${p.color}"></span><span>دور ${esc(p.name)}</span></div>${Board.diceHTML(S)}${Board.centerInfo(S)}${acts}<div class="focus">${focus}</div><div class="msg">${esc(S.log[0] || '')}</div>`;
 }
 function paintGame() {
   Board.render($('#board'), S, centerHTML());
