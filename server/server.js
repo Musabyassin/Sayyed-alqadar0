@@ -84,7 +84,7 @@ function broadcast(room) {
     return;
   }
   const base = stateFor(room, null);
-  room.displays.forEach((ws) => { if (ws.readyState === 1) ws.send(JSON.stringify({ ...base, canBoard: room.hostDisplays.has(ws) })); });
+  room.displays.forEach((ws) => { if (ws.readyState === 1) ws.send(JSON.stringify({ ...base, canBoard: room.hostDisplays.has(ws), ...(ws.spectator ? { spectator: true } : {}) })); });
   room.members.forEach((m) => { if (m.ws) send(m.ws, stateFor(room, m)); });
 }
 function schedule(room) { if (!room.bcast) room.bcast = setTimeout(() => broadcast(room), 25); }
@@ -130,6 +130,7 @@ setInterval(() => hits.clear(), 60000);
 
 function attach(ws, room, member) {
   ws.room = room; ws.member = member || null;
+  if (member) room.displays.delete(ws);
   if (member) {
     if (member.ws && member.ws !== ws) { try { member.ws.close(4000, 'replaced'); } catch (e) { /* ignore */ } }
     member.ws = ws; member.auto = false; clearTimeout(member.drop); clearTimeout(room.timers.get(room.members.indexOf(member)));
@@ -139,8 +140,16 @@ function join(ws, room, msg) {
   const name = String(msg.name || '').trim().slice(0, 14) || 'لاعب';
   let m = msg.token && room.members.find((x) => !x.bot && x.token === msg.token);
   if (!m && room.phase === 'playing') m = room.members.find((x) => !x.bot && !x.ws && x.name === name);
+  if (!m && (room.phase !== 'lobby' || msg.spectator)) {
+    /* دخول غرفة بدأت لعبتها (أو عودة مشاهد): يدخل مشاهداً فقط — يتابع اللوحة
+       والحالة دون مقعد لعب ودون أي قدرة على الإجابة أو الشات أو الصفقات. */
+    attach(ws, room, null); ws.spectator = true;
+    send(ws, { t: 'joined', code: room.code, spectator: true, name });
+    send(ws, { t: 'chatHist', list: room.chat });
+    broadcast(room);
+    return;
+  }
   if (!m) {
-    if (room.phase !== 'lobby') return send(ws, { t: 'err', m: 'اللعبة بدأت بالفعل' });
     if (room.members.length >= 6) return send(ws, { t: 'err', m: 'الغرفة ممتلئة (6 لاعبين)' });
     let nm = name, k = 2; while (room.members.some((x) => x.name === nm)) nm = `${name} ${k++}`;
     m = { name: nm, bot: false, token: crypto.randomBytes(12).toString('hex'), ws: null, host: false };
@@ -217,7 +226,11 @@ wss.on('connection', (ws, req) => {
       case 'ans': if (g) { g.answer(room.members.indexOf(m), msg.v); } return;
       case 'act': if (g) g.act(room.members.indexOf(m), msg.a, msg.i); return;
       case 'trade': if (g) { g.trade(room.members.indexOf(m), Number(msg.to), msg.give, msg.get, Number(msg.gc) | 0, Number(msg.rc) | 0).then((r) => send(ws, { t: 'tradeResult', ...r })).catch(() => {}); } return;
-      case 'tradeReply': if (room.trade && room.trade.toId === room.members.indexOf(m)) room.trade.resolve(!!msg.ok); return;
+      case 'tradeReply': if (room.trade && room.trade.toId === room.members.indexOf(m)) {
+        /* المفاوضة: الرد بعرض مضاد يصل المحرك كقيمة خاصة فيعكس الأدوار ويعيد العرض */
+        if (msg.counter && msg.terms) room.trade.resolve({ counter: true, give: msg.terms.give, get: msg.terms.get, gc: Number(msg.terms.gc) | 0, rc: Number(msg.terms.rc) | 0 });
+        else room.trade.resolve(!!msg.ok);
+      } return;
       case 'leave': leave(ws); return;
       default: return;
     }
