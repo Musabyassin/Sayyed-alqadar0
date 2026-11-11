@@ -99,7 +99,10 @@ class Game {
   }
 
   /* ---------- الأسئلة الموجهة للاعبين ---------- */
+  /* إجابة آمنة تُستخدم لإنهاء سؤال معلّق للاعب خرج من اللعبة (طرد/مغادرة) دون أي أثر جانبي */
+  safeAnswer(kind) { return { roll: 'roll', end: 'end', buy: 'auction', jail: 'roll', bid: 0, debt: 'bankrupt' }[kind]; }
   ask(p, spec) {
+    if (p.bankrupt) return Promise.resolve(this.safeAnswer(spec.kind));
     if (p.bot) return this.sleep(spec.kind === 'bid' ? 250 : 500).then(() => this.botAnswer(p, spec));
     return new Promise((resolve) => {
       spec = { ...spec, seq: (this.seq = (this.seq || 0) + 1) };
@@ -256,7 +259,8 @@ class Game {
     this.sync(); await this.sleep(400);
     return true;
   }
-  async bankrupt(p, to) {
+  async bankrupt(p, to, silent) {
+    if (p.bankrupt) return;
     this.owned(p).forEach((i) => {
       const h = this.hs(i);
       if (h) { if (h === 5) this.S.hotelBank++; else this.S.houseBank += h; p.money += Math.floor((SQ[i].h / 2) * h); this.S.houses[i] = 0; }
@@ -266,9 +270,25 @@ class Game {
     if (to) { to.money += p.money; props.forEach((i) => { this.S.owner[i] = to.id; }); }
     else props.forEach((i) => { delete this.S.owner[i]; this.S.mort[i] = false; });
     p.money = 0; p.bankrupt = true;
-    this.log(`${p.name} أعلن إفلاسه${to ? ` لصالح ${to.name}` : ''}`);
-    this.sfx('jail'); this.toast(`${p.name} أفلس`);
+    if (!silent) { this.log(`${p.name} أعلن إفلاسه${to ? ` لصالح ${to.name}` : ''}`); this.sfx('jail'); this.toast(`${p.name} أفلس`); }
     this.checkWin(); this.sync(); await this.sleep(1500);
+  }
+
+  /* استبعاد لاعب من اللعبة نهائياً (طرد المضيف أو مغادرة صريحة): أملاكه تعود للبنك كإفلاس للبنك،
+     وأي سؤال معلّق له يُنهى بإجابة آمنة حتى لا تتوقف اللعبة. */
+  async eliminate(pid, note) {
+    const p = this.S.players[pid]; if (!p || p.bankrupt || this.S.over || this.dead) return false;
+    if (note) { this.log(note); this.toast(note); }
+    const pe = this.pend && this.pend.pid === pid ? this.pend : null;
+    await this.bankrupt(p, null, true);
+    if (pe && this.pend === pe) { this.pend = null; this.S.pending = null; pe.resolve(this.safeAnswer(pe.spec.kind)); }
+    this.sync(); return true;
+  }
+  /* إعادة لاعب مستبعَد إلى اللعب بقرار المضيف: يبدأ من جديد بالنقد الابتدائي ومن الانطلاق، دون أملاك */
+  reinstate(pid) {
+    const p = this.S.players[pid]; if (!p || !p.bankrupt || this.S.over || this.dead) return false;
+    p.bankrupt = false; p.money = this.S.opt.cash; p.pos = 0; p.inJail = false; p.jailTurns = 0;
+    this.log(`${p.name} عاد إلى اللعبة بقرار المضيف`); this.toast(`${p.name} عاد إلى اللعبة`); this.sync(); return true;
   }
 
   /* ---------- الوصول إلى المربعات ---------- */
@@ -296,6 +316,7 @@ class Game {
       else { out.add(q.id); this.log(`${q.name} انسحب من المزاد`); }
     }
     S.focus = null;
+    if (high && high.bankrupt) { this.log('أعلى مزايد خرج من اللعبة، يبقى العقار للبنك'); high = null; }
     if (high) { high.money -= bid; S.owner[idx] = high.id; this.log(`${high.name} فاز بـ ${SQ[idx].n} بـ ${bid}`); this.toast(`${high.name} فاز بالمزاد: ${bid}`); this.sfx('buy'); }
     else this.log('لم يزايد أحد، يبقى العقار للبنك');
     this.sync(); await this.sleep(500);
@@ -312,6 +333,7 @@ class Game {
     await this.charge(p, rent, owner, 'rent');
   }
   async land(p, tot, o2 = {}) {
+    if (p.bankrupt) return;
     const sq = SQ[p.pos]; this.sync(); await this.sleep(300);
     if (sq.t === 'prop' || sq.t === 'rail' || sq.t === 'util') return this.landProp(p, sq, tot, o2);
     if (sq.t === 'tax') { this.log(`${p.name} يدفع ${sq.n} ${sq.v}`); await this.charge(p, sq.v, null, 'tax'); return; }
