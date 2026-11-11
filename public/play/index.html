@@ -69,42 +69,6 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 .boardwrap{position:relative}
 .boardwrap.fit{display:flex;flex-direction:column}
 .boardwrap.fit .bdbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin-inline:-8px}
-/* أفقي بملء الشاشة: إلغاء حد العرض وضغط الشريط العلوي والتبويبات حتى تكبر اللوحة لأقصى حد */
-@media (orientation:landscape) and (max-height:540px){
-  body{max-width:none;padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px));padding-bottom:calc(52px + env(safe-area-inset-bottom,0px))}
-  .top{padding:4px 0 5px}
-  .top b{font-size:15px}
-  .top .money{font-size:20px}
-  .top .pawn{width:18px;height:18px}
-  .tabs{max-width:none}
-  .tabs button{min-height:46px;font-size:11px;gap:0}
-  .tabs button svg{width:19px;height:19px}
-  .boardwrap.fit .bdbox{margin-inline:0}
-  /* اللوحة ممتدة على كامل الشاشة (#bd.wide): خلايا عريضة ونصوص عقارات كبيرة واضحة */
-  #bd.wide{aspect-ratio:auto;border-radius:12px}
-  #bd.wide .band{flex-basis:14%}
-  #bd.wide .pr{display:none}
-  #bd.wide .nm{font-size:11px}
-  #bd.wide .rn{font-size:10px}
-  #bd.wide .corner .nm{font-size:14px}
-  #bd.wide .ic{width:13px;height:13px}
-  #bd.wide .hs{width:8px;height:8px}
-  #bd.wide .hs.ht{width:15px;height:8px}
-  #bd.wide .tk .pawn{width:13px;height:13px}
-  #bd.wide .center{gap:6px;padding:8px}
-  #bd.wide .ctitle{font-size:22px}
-  #bd.wide .turn{font-size:13px}
-  #bd.wide .die{width:40px;height:40px;border-radius:9px;padding:5px}
-  #bd.wide .ccards{grid-template-columns:repeat(3,1fr);gap:6px}
-  #bd.wide .ccard{padding:4px 8px;border-radius:8px}
-  #bd.wide .ccard .ph{font-size:12px}
-  #bd.wide .ccard .pn{font-size:10px}
-  #bd.wide .cbtn{min-height:38px;font-size:15px;padding:0 16px;border-radius:10px}
-  #bd.wide .cq{font-size:13px}
-  #bd.wide .cnote{font-size:10px}
-  #bd.wide .cwin{font-size:17px}
-  #bd.wide .msg{font-size:11px;min-height:0}
-}
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .cm2{padding:7px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;line-height:1.55;overflow-wrap:anywhere}
@@ -124,6 +88,45 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 #toasts{position:fixed;inset-inline:0;top:calc(70px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
 .toast{background:var(--accent);color:var(--accent-fg);padding:8px 16px;border-radius:99px;font-size:14px;font-weight:700;box-shadow:var(--shadow);max-width:92vw}
 #conn{position:fixed;top:0;inset-inline:0;z-index:70;background:var(--bad);color:#fff;text-align:center;padding:calc(6px + env(safe-area-inset-top,0px)) 8px 6px;font-size:13px;font-weight:600}
+/* الوضع الأفقي: شريط أدوات عمودي على الجانب الأيمن، ولوحة ممتدة متناسقة بلا سكرول (آخر الأنماط ليتغلب على القواعد الأساسية) */
+@media (orientation:landscape) and (max-height:540px){
+  body{max-width:none;padding-bottom:6px;padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:calc(72px + env(safe-area-inset-right,0px))}
+  .top{padding:4px 0 5px}
+  .top b{font-size:15px}
+  .top .money{font-size:20px}
+  .top .pawn{width:18px;height:18px}
+  .tabs{position:fixed;top:0;bottom:0;right:0;left:auto;inset-inline:auto;width:calc(64px + env(safe-area-inset-right,0px));max-width:none;margin:0;display:flex;flex-direction:column;justify-content:space-evenly;align-items:stretch;background:var(--surface);border-top:0;border-left:1px solid var(--line);padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+  .tabs button{position:relative;min-height:52px;font-size:10.5px;gap:1px}
+  .tabs button svg{width:20px;height:20px}
+  .tabs button .dot{margin:0;top:6px;inset-inline-end:10px}
+  .boardwrap.fit .bdbox{margin-inline:0}
+  /* اللوحة ممتدة على كامل المساحة (#bd.wide): صفوف أوسع ونصوص محسوبة بلا تداخل */
+  #bd.wide{aspect-ratio:auto;border-radius:12px}
+  #bd.wide .band{flex-basis:12%}
+  #bd.wide .body{gap:0;padding:0 2px}
+  #bd.wide .pr{display:none}
+  #bd.wide .nm{font-size:11px;line-height:1.05}
+  #bd.wide .rn{font-size:10px;line-height:1.1}
+  #bd.wide .corner .nm{font-size:14px}
+  #bd.wide .ic{width:13px;height:13px}
+  #bd.wide .hs{width:8px;height:8px}
+  #bd.wide .hs.ht{width:15px;height:8px}
+  #bd.wide .tk .pawn{width:13px;height:13px}
+  #bd.wide .center{gap:6px;padding:8px}
+  #bd.wide .ctitle{font-size:22px}
+  #bd.wide .turn{font-size:13px}
+  #bd.wide .die{width:40px;height:40px;border-radius:9px;padding:5px}
+  #bd.wide .ccards{grid-template-columns:repeat(3,1fr);gap:6px}
+  #bd.wide .ccard{padding:4px 8px;border-radius:8px}
+  #bd.wide .ccard .ph{font-size:12px}
+  #bd.wide .ccard .pn{font-size:10px}
+  #bd.wide .cbtn{min-height:38px;font-size:15px;padding:0 16px;border-radius:10px}
+  #bd.wide .cq{font-size:13px}
+  #bd.wide .cnote{font-size:10px}
+  #bd.wide .cwin{font-size:17px}
+  #bd.wide .msg{font-size:11px;min-height:0}
+  #toasts{inset-inline-end:calc(72px + env(safe-area-inset-right,0px))}
+}
 </style>
 </head>
 <body>
