@@ -190,24 +190,36 @@ class Game {
     a.money += bc - ac; b.money += ac - bc;
     this.sfx('buy'); this.log(`صفقة بين ${a.name} و${b.name}`); this.toast('تمت الصفقة');
   }
-  /* يعيد {ok, why} */
+  /* يعيد {ok, why}. المفاوضة: إذا ردّ الطرف الآخر بعرض مضاد تنعكس الأدوار
+     وتُعرض الشروط الجديدة على الطرف الأول، وقد تتكرر الجولات حتى قبول أو رفض. */
   async trade(pid, toId, give, get, gc, rc) {
     if (this.S.trade) return { ok: false, why: 'توجد صفقة قيد الانتظار' };
     const pe = this.pend; if (!pe || pe.pid !== pid) return { ok: false, why: 'ليس دورك' };
-    const a = this.S.players[pid], b = this.S.players[toId];
-    let err = this.tradeCheck(a, b, give, get, gc, rc); if (err) return { ok: false, why: err };
-    let ok;
-    if (b.bot) { ok = this.evalTrade(b, a, give, get, gc, rc) >= 10; await this.sleep(700); }
-    else {
-      this.S.trade = { from: pid, to: toId, give, get, gc, rc }; this.sync();
-      ok = await this.io.askTrade(toId, this.S.trade);
-      this.S.trade = null;
+    let from = this.S.players[pid], to = this.S.players[toId];
+    let cg = give, ck = get, cc = gc, cr = rc, counter = false;
+    while (true) {
+      let err = this.tradeCheck(from, to, cg, ck, cc, cr); if (err) return { ok: false, why: err };
+      let ok;
+      if (to.bot) { ok = this.evalTrade(to, from, cg, ck, cc, cr) >= 10; await this.sleep(700); }
+      else {
+        this.S.trade = { from: from.id, to: to.id, give: cg, get: ck, gc: cc, rc: cr, counter }; this.sync();
+        const res = await this.io.askTrade(to.id, this.S.trade);
+        this.S.trade = null;
+        if (res && res.counter) {
+          cg = Array.isArray(res.give) ? res.give : []; ck = Array.isArray(res.get) ? res.get : [];
+          cc = Number(res.gc) | 0; cr = Number(res.rc) | 0;
+          [from, to] = [to, from]; counter = true;
+          if (this.dead) return { ok: false, why: 'انتهت اللعبة' };
+          this.sync(); continue;
+        }
+        ok = !!res;
+      }
+      if (this.dead) return { ok: false, why: 'انتهت اللعبة' };
+      if (ok) { err = this.tradeCheck(from, to, cg, ck, cc, cr); if (err) return { ok: false, why: err }; this.execTrade(from, to, cg, ck, cc, cr); this.sync(); return { ok: true, why: null }; }
+      this.log(`${to.name} رفض صفقة ${from.name}`);
+      this.sync();
+      return { ok: false, why: 'رفض ' + to.name + ' الصفقة' };
     }
-    if (this.dead) return { ok: false, why: 'انتهت اللعبة' };
-    if (ok) { err = this.tradeCheck(a, b, give, get, gc, rc); if (err) ok = false; else this.execTrade(a, b, give, get, gc, rc); }
-    else this.log(`${b.name} رفض صفقة ${a.name}`);
-    this.sync();
-    return { ok, why: ok ? null : 'رفض ' + b.name + ' الصفقة' };
   }
 
   /* ---------- سير اللعب ---------- */
