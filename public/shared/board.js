@@ -65,6 +65,9 @@
   const die = (n, roll) => `<div class="die ${roll ? 'roll' : ''}">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((k) => `<i class="${PIPS[n].includes(k) ? 'on' : ''}"></i>`).join('')}</div>`;
   const diceHTML = (S) => `<div class="dice">${S.rolling ? die(1 + Math.floor(Math.random() * 6), true) + die(1 + Math.floor(Math.random() * 6), true) : die(S.dice[0]) + die(S.dice[1])}</div>`;
 
+  /* لوحة المعلومات في وسط اللوحة: رقائق بكل لاعب — لونه واسمه ونقوده وعدد عقاراته */
+  const centerInfo = (S) => `<div class="cinfo">${S.players.map((p) => { const n = Object.keys(S.owner).filter((i) => S.owner[i] === p.id).length; return `<span class="chip2 ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}<b>${p.bankrupt ? 'مفلس' : Number(p.money).toLocaleString('en-US')}</b><small>${n} عقار</small></span>`; }).join('')}</div>`;
+
   /* يرسم اللوحة كاملة داخل el، والوسط من centerHTML */
   function render(el, S, centerHTML) {
     el.classList.add('board');
@@ -92,5 +95,5 @@
     const own = ['prop', 'rail', 'util'].includes(s.t) ? `<div class="dn">${o ? `المالك: <b>${esc(o.name)}</b>${S.mort[i] ? ' (مرهون)' : ''}${h ? ` · المباني: ${h === 5 ? 'فندق' : h}` : ''}` : 'غير مملوك'}</div>` : '';
     return `<div class="deed">${head}${rows ? `<table class="rt">${rows}</table>` : ''}${note ? `<div class="dn">${note}</div>` : ''}${own}</div>`;
   }
-  root.Board = { render, deedHTML, diceHTML, rentText, esc, SQ, GC };
+  root.Board = { render, deedHTML, diceHTML, rentText, centerInfo, esc, SQ, GC };
 })(typeof self !== 'undefined' ? self : this);
