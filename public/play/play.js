@@ -22,13 +22,16 @@ function closeModal() { const m = $('#modal'); m.hidden = true; m.innerHTML = ''
 Object.assign(App, { send, toast, modal, closeModal });
 
 const net = Net.connect({
-  onOpen() { if (App.room) send({ t: 'join', code: App.room.code, token: App.room.token, name: store.get('sa_name') || 'لاعب' }); },
+  onOpen() { if (App.room) send({ t: 'join', code: App.room.code, token: App.room.token, name: store.get('sa_name') || 'لاعب', spectator: App.room.spectator || undefined }); },
   onStatus(s) { $('#conn').hidden = s === 'open'; },
   onMsg(m) {
-    if (m.t === 'joined') { App.room = { code: m.code, token: m.token }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); App.me = m.id; }
-    else if (m.t === 'lobby') { App.lobby = m; App.st = null; App.me = m.me; }
+    if (m.t === 'joined') {
+      if (m.spectator) { App.spectator = true; App.me = null; App.room = { code: m.code, spectator: true }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); toast('دخلت كمشاهد — اللعبة بدأت بالفعل'); }
+      else { App.spectator = false; App.room = { code: m.code, token: m.token }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); App.me = m.id; }
+    }
+    else if (m.t === 'lobby') { App.lobby = m; App.st = null; App.me = m.me === undefined ? null : m.me; }
     else if (m.t === 'state') {
-      App.st = m; App.lobby = null; App.me = m.me;
+      App.st = m; App.lobby = null; App.me = m.me === undefined ? null : m.me; App.spectator = !!m.spectator;
       const seq = m.prompt ? m.prompt.seq : null;
       if (seq && seq !== App.lastSeq) { try { if (store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
       App.lastSeq = seq;
