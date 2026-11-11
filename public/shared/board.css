@@ -25,15 +25,15 @@ button,input,select{font-family:inherit}
 .hs.ht{width:3cqw;height:1.5cqw;background:#d6342c}
 .body{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2cqw;padding:.2cqw;text-align:center;direction:rtl}
 /* أسماء العقارات ظاهرة دائماً على كل مربع، وتصغر مع حجم اللوحة */
-.nm{font-size:max(5.5px,1.5cqw);line-height:1.12;font-weight:600;overflow-wrap:anywhere}
-.pr{font-size:max(5.5px,1.4cqw);color:var(--muted);font-variant-numeric:tabular-nums}
-.rn{font-size:max(5.5px,1.35cqw);color:#8fd6ae;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
-.ic{width:2.6cqw;height:2.6cqw;color:var(--muted)}
-.corner .nm{font-size:max(7px,1.9cqw)}
-.corner .ic{width:4cqw;height:4cqw}
+.nm{font-size:max(6.5px,1.85cqw);line-height:1.12;font-weight:600;overflow-wrap:anywhere}
+.pr{font-size:max(6.5px,1.65cqw);color:var(--muted);font-variant-numeric:tabular-nums}
+.rn{font-size:max(6.5px,1.65cqw);color:#8fd6ae;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+.ic{width:3cqw;height:3cqw;color:var(--muted)}
+.corner .nm{font-size:max(8px,2.2cqw)}
+.corner .ic{width:4.4cqw;height:4.4cqw}
 @container board (max-width:560px){
-  .nm{font-size:max(5.5px,1.75cqw);line-height:1.1}.pr{font-size:max(5.5px,1.7cqw)}.rn{font-size:max(5.5px,1.65cqw)}.ic{display:none}
-  .corner .ic{display:block;width:4cqw;height:4cqw}.corner .nm{font-size:max(7px,2.1cqw)}}
+  .nm{font-size:max(6.5px,1.95cqw);line-height:1.1}.pr{font-size:max(6.5px,1.9cqw)}.rn{font-size:max(6.5px,1.85cqw)}.ic{display:none}
+  .corner .ic{display:block;width:4.4cqw;height:4.4cqw}.corner .nm{font-size:max(8px,2.3cqw)}}
 .cell.mg::after{content:"";position:absolute;inset:0;z-index:2;background:repeating-linear-gradient(135deg,rgba(0,0,0,.45) 0 4px,transparent 4px 8px);pointer-events:none}
 .tk{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:.3cqw;padding:.3cqw;pointer-events:none;z-index:3}
 .tk .pawn{width:2.7cqw;height:2.7cqw;min-width:10px;min-height:10px}
@@ -43,9 +43,17 @@ button,input,select{font-family:inherit}
 .center{grid-area:2/2/11/11;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.3cqw;padding:1.5cqw;text-align:center;background-color:var(--center);direction:rtl;min-width:0;min-height:0;overflow:hidden;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%23c9962b' stroke-opacity='.18'%3E%3Crect x='11' y='11' width='22' height='22'/%3E%3Crect x='11' y='11' width='22' height='22' transform='rotate(45 22 22)'/%3E%3C/g%3E%3C/svg%3E")}
 .ctitle{font-family:var(--f-display);font-size:6cqw;line-height:1;color:var(--accent);margin:0}
-.turn{display:flex;align-items:center;gap:.8cqw;font-size:max(11px,2.4cqw);font-weight:600}
+.turn{display:flex;align-items:center;gap:.8cqw;font-size:max(11px,2.6cqw);font-weight:600}
 .dice{display:flex;gap:1.6cqw}
-.die{width:8cqw;height:8cqw;border-radius:1.5cqw;background:var(--die);box-shadow:0 2px 6px rgba(0,0,0,.4);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:1cqw}
+.die{width:9.5cqw;height:9.5cqw;border-radius:1.8cqw;background:var(--die);box-shadow:0 2px 6px rgba(0,0,0,.4);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:1.2cqw}
+/* لوحة المعلومات وسط اللوحة: رقائق اللاعبين */
+.cinfo{display:flex;flex-wrap:wrap;gap:.7cqw;justify-content:center;max-width:97%}
+.chip2{display:inline-flex;align-items:center;gap:.6cqw;background:var(--surface2);border:1px solid var(--line);border-radius:99px;padding:.35cqw 1.1cqw;font-size:max(9px,1.75cqw);font-weight:600;line-height:1.25}
+.chip2 .pawn{width:2.2cqw;height:2.2cqw;min-width:9px;min-height:9px}
+.chip2 b{color:var(--accent);font-variant-numeric:tabular-nums}
+.chip2 small{color:var(--muted);font-weight:400}
+.chip2.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.chip2.bk{opacity:.45}
 .die i{border-radius:50%;margin:8%}.die i.on{background:var(--pip)}
 .die.roll{animation:shake .25s infinite}
 @keyframes shake{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
