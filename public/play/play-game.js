@@ -83,12 +83,12 @@ function tradeView(st) {
 function centerCardsHTML(st) {
   const S = st.s;
   const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h})` : ''}`; };
-  return `<div class="ccards">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="ccard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${p.bankrupt ? 'مفلس' : fmt(p.money)}</span></div><div class="pn">${own.length ? own.map(propName).join('، ') : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
+  return `<div class="ccards">${S.players.map((p) => { const own = ownedOf(S, p.id); const kick = st.host && st.me != null && p.id !== st.me && !p.bankrupt && !S.over ? `<button class="ckick ${App.kickArm === p.id ? 'armed' : ''}" data-kick="${p.id}">${App.kickArm === p.id ? 'متأكد؟ اضغط للطرد' : 'طرد'}</button>` : ''; return `<div class="ccard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${p.bankrupt ? 'مفلس' : fmt(p.money)}</span></div><div class="pn">${own.length ? own.map(propName).join('، ') : 'لا عقارات بعد'}</div>${kick}</div>`; }).join('')}</div>`;
 }
 function centerDecisionHTML(st) {
   const S = st.s, me = S.players[st.me], p = st.prompt;
   if (S.over) { const w = S.players[S.winner]; return `<div class="cact"><div class="cwin">${S.winner === st.me ? '🏆 مبروك، فزت!' : `الفائز: ${esc(w.name)}`}</div><div class="crow2">${st.host ? '<button class="cbtn pri" data-new="1">لعبة جديدة</button>' : ''}<button class="cbtn" data-leave="1">مغادرة</button></div></div>`; }
-  if (st.me == null) return '<div class="cact"><div class="cnote">👁 أنت مشاهد في هذه اللعبة — بدأت قبل انضمامك</div></div>';
+  if (st.me == null) return `<div class="cact"><div class="cnote">${App.pendingRejoin ? '⏳ طلب عودتك عند المضيف — بانتظار موافقته لتعود إلى اللعب' : '👁 أنت مشاهد في هذه اللعبة — بدأت قبل انضمامك'}</div></div>`;
   if (me.bankrupt) return '<div class="cact"><div class="cnote">خرجت من اللعبة — تابع اللوحة حتى النهاية</div></div>';
   if (!p) { const pend = S.pending, w = pend ? S.players[pend.pid] : null; return w ? `<div class="cact"><div class="cnote">بانتظار ${esc(w.name)}...</div></div>` : ''; }
   const dis = sentSeq === p.seq;
@@ -205,11 +205,27 @@ App.renderGame = function renderGame() {
       modal(`<h2>${inc.counter ? 'عرض مضاد' : 'عرض صفقة'} من ${esc(from.name)}</h2><div class="card" style="margin:0"><div><b>يعطيك:</b> ${esc(names(inc.give))}${inc.gc ? ` + ${fmt(inc.gc)} نقداً` : ''}</div><div><b>ويأخذ منك:</b> ${esc(names(inc.get))}${inc.rc ? ` + ${fmt(inc.rc)} نقداً` : ''}</div></div><div class="row"><button class="btn" data-tr="0">ارفض</button><button class="btn" data-tr="2">🤝 مفاوضة</button><button class="btn primary" data-tr="1">اقبل</button></div>`);
     }
   } else if (App.modalKey && App.modalKey.startsWith('tin')) closeModal();
+  /* طلب عودة لاعب خرج من اللعبة: قرار المضيف (لا يزاحم نافذة صفقة مفتوحة) */
+  const rj = st.host ? st.rejoin : null;
+  if (!rj) App.rejoinDismiss = null;
+  if (rj && !inc) {
+    const key = 'rejoin' + rj.id + ':' + rj.name;
+    if (App.modalKey !== key && App.rejoinDismiss !== key) {
+      App.modalKey = key;
+      modal(`<h2>🔔 طلب عودة إلى اللعبة</h2><div class="card" style="margin:0"><b>${esc(rj.name)}</b> خرج من اللعبة ويطلب العودة إلى اللعب.</div><div class="row"><button class="btn" data-rj="0">رفض</button><button class="btn" data-rj="later">لاحقاً</button><button class="btn primary" data-rj="1">إرجاع للعب</button></div>`);
+    }
+  } else if (App.modalKey && App.modalKey.startsWith('rejoin')) closeModal();
 };
 
 function onViewClick(e) {
   const t = e.target;
   let el = t.closest('[data-ans]'); if (el) return ans(el.dataset.ans === '' ? '' : (isNaN(el.dataset.ans) ? el.dataset.ans : Number(el.dataset.ans)));
+  el = t.closest('[data-kick]'); if (el) {
+    /* طرد المضيف أثناء اللعب: نقرة أولى للتأكيد وثانية للتنفيذ */
+    const id = +el.dataset.kick;
+    if (App.kickArm !== id) { App.kickArm = id; App.render(); setTimeout(() => { if (App.kickArm === id) { App.kickArm = null; App.render(); } }, 2800); return; }
+    App.kickArm = null; send({ t: 'kick', id }); return;
+  }
   el = t.closest('[data-act]'); if (el) {
     /* بيع العقار للبنك لا رجعة فيه: أول نقرة للتأكيد والثانية للتنفيذ */
     if (el.dataset.act === 'sellprop' && el.dataset.armed !== '1') {
@@ -260,6 +276,11 @@ $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-
 $('#modal').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) { if (e.target.id === 'modal' && App.modalKey === 'deed') closeModal(); return; }
   if (b.dataset.close) closeModal();
+  else if (b.dataset.rj !== undefined) {
+    if (b.dataset.rj === 'later') App.rejoinDismiss = App.modalKey;
+    else send({ t: 'rejoinReply', ok: b.dataset.rj === '1' });
+    closeModal(); App.modalKey = null; App.render();
+  }
   else if (b.dataset.tr === '2') {
     const S = App.st.s, inc = S.trade && S.trade.to === App.st.me ? S.trade : null;
     if (inc) {
