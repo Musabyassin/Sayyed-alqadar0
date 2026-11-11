@@ -26,12 +26,12 @@ const net = Net.connect({
   onStatus(s) { $('#conn').hidden = s === 'open'; },
   onMsg(m) {
     if (m.t === 'joined') {
-      if (m.spectator) { App.spectator = true; App.me = null; App.room = { code: m.code, spectator: true }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); toast('دخلت كمشاهد — اللعبة بدأت بالفعل'); }
-      else { App.spectator = false; App.room = { code: m.code, token: m.token }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); App.me = m.id; }
+      if (m.spectator) { App.spectator = true; App.pendingRejoin = !!m.pending; App.me = null; App.room = { code: m.code, spectator: true }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); toast(m.pending ? 'أُرسل طلب عودتك إلى المضيف — بانتظار موافقته' : 'دخلت كمشاهد — اللعبة بدأت بالفعل'); }
+      else { App.spectator = false; App.pendingRejoin = false; App.room = { code: m.code, token: m.token }; store.set('sa_room', JSON.stringify(App.room)); store.set('sa_name', m.name); App.me = m.id; }
     }
     else if (m.t === 'lobby') { App.lobby = m; App.st = null; App.me = m.me === undefined ? null : m.me; }
     else if (m.t === 'state') {
-      App.st = m; App.lobby = null; App.me = m.me === undefined ? null : m.me; App.spectator = !!m.spectator;
+      App.st = m; App.lobby = null; App.me = m.me === undefined ? null : m.me; App.spectator = !!m.spectator; App.pendingRejoin = !!m.pending;
       const seq = m.prompt ? m.prompt.seq : null;
       if (seq && seq !== App.lastSeq) { try { if (store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
       App.lastSeq = seq;
@@ -40,7 +40,7 @@ const net = Net.connect({
     else if (m.t === 'ev') { if (m.e.e === 'chat') { if (App.onChat) App.onChat(m.e); } else if (m.e.e === 'sfx') { if (!(App.st && App.st.tv)) Sfx.play(m.e.n); } else if (m.e.e === 'toast') toast(m.e.m); return; }
     else if (m.t === 'tradeResult') { App.tradeBusy = false; toast(m.ok ? 'تمت الصفقة' : m.why || 'لم تتم الصفقة'); if (m.ok && App.resetTrade) App.resetTrade(); }
     else if (m.t === 'err') { toast(m.m); if (m.fatal) { App.room = null; store.del('sa_room'); App.st = null; App.lobby = null; } }
-    else if (m.t === 'kicked') { App.room = null; store.del('sa_room'); App.st = null; App.lobby = null; toast('تم إخراجك من الغرفة'); }
+    else if (m.t === 'kicked') { App.room = null; store.del('sa_room'); App.st = null; App.lobby = null; toast(m.m || 'تم إخراجك من الغرفة'); }
     else return;
     render();
   },
