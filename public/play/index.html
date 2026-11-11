@@ -80,6 +80,30 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
   .tabs button{min-height:46px;font-size:11px;gap:0}
   .tabs button svg{width:19px;height:19px}
   .boardwrap.fit .bdbox{margin-inline:0}
+  /* اللوحة ممتدة على كامل الشاشة (#bd.wide): خلايا عريضة ونصوص عقارات كبيرة واضحة */
+  #bd.wide{aspect-ratio:auto;border-radius:12px}
+  #bd.wide .band{flex-basis:14%}
+  #bd.wide .pr{display:none}
+  #bd.wide .nm{font-size:11px}
+  #bd.wide .rn{font-size:10px}
+  #bd.wide .corner .nm{font-size:14px}
+  #bd.wide .ic{width:13px;height:13px}
+  #bd.wide .hs{width:8px;height:8px}
+  #bd.wide .hs.ht{width:15px;height:8px}
+  #bd.wide .tk .pawn{width:13px;height:13px}
+  #bd.wide .center{gap:6px;padding:8px}
+  #bd.wide .ctitle{font-size:22px}
+  #bd.wide .turn{font-size:13px}
+  #bd.wide .die{width:40px;height:40px;border-radius:9px;padding:5px}
+  #bd.wide .ccards{grid-template-columns:repeat(3,1fr);gap:6px}
+  #bd.wide .ccard{padding:4px 8px;border-radius:8px}
+  #bd.wide .ccard .ph{font-size:12px}
+  #bd.wide .ccard .pn{font-size:10px}
+  #bd.wide .cbtn{min-height:38px;font-size:15px;padding:0 16px;border-radius:10px}
+  #bd.wide .cq{font-size:13px}
+  #bd.wide .cnote{font-size:10px}
+  #bd.wide .cwin{font-size:17px}
+  #bd.wide .msg{font-size:11px;min-height:0}
 }
 /* الشات */
 .cmsg{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
