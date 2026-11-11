@@ -62,44 +62,6 @@ function propsHTML(st, withHint) {
   }).join('');
   return `${withHint && !can ? '<div class="muted" style="font-size:13px">أزرار الإدارة تعمل في دورك فقط.</div>' : ''}<div style="display:grid;gap:8px">${rows}</div><div class="muted" style="font-size:12px">البيوت المتاحة: ${S.houseBank} · الفنادق المتاحة: ${S.hotelBank}</div>`;
 }
-function standingsHTML(S) {
-  return `<div class="plist">${S.standings.map((r) => `<div class="pitem"><span class="pawn" style="background:${S.players[r.id].color}"></span>${esc(S.players[r.id].name)}${r.bankrupt ? ' (مفلس)' : ''}<small>${fmt(r.worth)}</small></div>`).join('')}</div>`;
-}
-/* شريط الدور الصغير أعلى تبويب اللوحة */
-function turnbarHTML(st) {
-  const S = st.s, me = S.players[st.me], cur = S.players[S.cur], f = S.focus;
-  if (S.over || me.bankrupt) return '';
-  const mine = S.cur === st.me;
-  let h = `<div class="turnbar ${mine ? 'mine' : ''}" style="margin-top:0"><span class="pawn" style="background:${cur.color}"></span>${mine ? 'دورك الآن' : `دور ${esc(cur.name)}`}${me.inJail ? ' · أنت في السجن' : ''}${me.jc ? ` · بطاقة خروج × ${me.jc}` : ''}</div>`;
-  if (f && f.k === 'card') h += `<div class="focus-note" style="margin-top:8px">${esc(S.players[f.pid].name)} سحب ${f.type === 'chance' ? 'فرصة' : 'صندوق المجتمع'}: ${esc(f.text)}</div>`;
-  return h;
-}
-/* بطاقة القرار: تظهر أسفل بطاقات الاسم والنقود مباشرة (فيها زر الرمي والإنهاء وبقية القرارات) */
-function decisionView(st) {
-  const S = st.s, me = S.players[st.me], p = st.prompt;
-  let h = '';
-  if (S.over) {
-    const w = S.players[S.winner];
-    return `<div class="card"><h2>${S.winner === st.me ? 'مبروك، فزت!' : 'انتهت اللعبة'}</h2><div style="font-size:20px;font-weight:700">الفائز: ${esc(w.name)}</div>${standingsHTML(S)}${st.host ? '<button class="btn primary" data-new="1">لعبة جديدة</button>' : '<div class="muted">المضيف يبدأ لعبة جديدة.</div>'}<button class="btn" data-leave="1">مغادرة</button></div>`;
-  }
-  if (me.bankrupt) return '<div class="card"><h2>خرجت من اللعبة</h2><span class="muted">يمكنك متابعة اللوحة والسجل حتى تنتهي المباراة.</span></div>';
-  if (!p) {
-    const pend = S.pending, w = pend ? S.players[pend.pid] : null;
-    return `<div class="card status">${Board.diceHTML(S)}<div style="font-weight:600">${esc(S.log[0] || '')}</div><div class="muted">${w ? `بانتظار ${esc(w.name)}...` : 'جارٍ التنفيذ...'}</div></div>`;
-  }
-  const dis = sentSeq === p.seq;
-  const b = (v, label, cls, off) => `<button class="btn ${cls || ''}" data-ans="${v}" ${off || dis ? 'disabled' : ''}>${label}</button>`;
-  if (p.kind === 'roll') h += `<div class="card">${b('roll', 'ارمِ النرد', 'primary big')}<span class="muted" style="text-align:center">يمكنك الإدارة أو الصفقات قبل الرمي من التبويبات.</span></div>`;
-  else if (p.kind === 'buy') h += `<div class="card"><b>هل تشتري ${esc(SQ[p.idx].n)}؟</b><div class="deedwrap">${Board.deedHTML(p.idx, S)}</div><div class="muted">رصيدك ${fmt(me.money)}</div><div class="row">${b('buy', `اشترِ بـ ${p.price}`, 'primary', me.money < p.price)}${b('auction', 'مزاد')}</div></div>`;
-  else if (p.kind === 'jail') h += `<div class="card"><b>أنت في السجن</b><div class="row">${b('pay', 'ادفع 50', '', me.money < 50)}${b('card', 'بطاقة الخروج', '', !me.jc)}</div>${b('roll', 'ارمِ النرد (رقمان متشابهان يخرجانك)', 'primary')}</div>`;
-  else if (p.kind === 'bid') {
-    const hi = p.high != null ? S.players[p.high] : null;
-    h += `<div class="card"><b>مزاد على ${esc(SQ[p.idx].n)}</b><div class="bidbox"><div class="n">${p.cur}</div><div class="muted">${hi ? 'الأعلى: ' + esc(hi.name) : 'لا عروض بعد'} · رصيدك ${fmt(me.money)}</div></div><div class="row">${[10, 50, 100].map((n) => b(n, `+${n}`, 'primary', me.money < p.cur + n)).join('')}</div>${b(0, 'انسحب')}</div>`;
-  } else if (p.kind === 'debt') {
-    h += `<div class="card"><b style="color:var(--bad)">عليك دفع ${fmt(p.need)}</b><span class="muted">رصيدك ${fmt(me.money)}. اجمع المبلغ ببيع المباني أو رهن العقارات أو بيعها للبنك.</span>${propsHTML(st, false)}<div class="row">${b('bankrupt', 'أعلن الإفلاس', 'danger')}${b('pay', `ادفع ${fmt(p.need)}`, 'primary', me.money < p.need)}</div></div>`;
-  } else if (p.kind === 'end') h += `<div class="card">${b('end', 'إنهاء الدور', 'primary big')}<span class="muted" style="text-align:center">قبل الإنهاء يمكنك البناء من تبويب «أملاكي» أو عرض صفقة.</span></div>`;
-  return h;
-}
 function tradeView(st) {
   const S = st.s, me = st.me, can = !!st.prompt && !App.tradeBusy;
   const others = S.players.filter((q) => q.id !== me && !q.bankrupt);
@@ -112,11 +74,6 @@ function tradeView(st) {
     <div class="tg"><div class="tcol"><b>تعطي</b>${list(mine, tf.give, 'give')}<label class="f">نقد<input type="number" id="tgc" min="0" max="${meP.money}" value="${tf.gc}" inputmode="numeric"></label></div>
     <div class="tcol"><b>تأخذ من ${esc(toP.name)}</b>${list(theirs, tf.get, 'get')}<label class="f">نقد<input type="number" id="trc" min="0" max="${toP.money}" value="${tf.rc}" inputmode="numeric"></label></div></div>
     <button class="btn primary" id="tgo" ${can ? '' : 'disabled'}>${App.tradeBusy ? 'بانتظار الرد...' : 'اعرض الصفقة'}</button>${st.prompt ? '' : '<span class="muted" style="font-size:13px">الصفقات متاحة في دورك فقط.</span>'}</div>`;
-}
-function playersStrip(st) {
-  const S = st.s;
-  const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h} بيوت)` : ''}`; };
-  return `<div class="pstrip mini">${S.players.map((p) => { const own = ownedOf(S, p.id); return `<div class="pcard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.bankrupt ? ' · مفلس' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${fmt(p.money)}</span></div><div class="pn">${own.length ? `(${own.length}) ${own.map(propName).join('، ')}` : 'لا عقارات بعد'}</div></div>`; }).join('')}</div>`;
 }
 /* ----- وسط لوحة الهاتف: كل المعلومات والقرارات داخل اللوحة نفسها ----- */
 function centerCardsHTML(st) {
@@ -146,23 +103,18 @@ function centerHTMLPhone(st) {
   return h + `${centerDecisionHTML(st)}<div class="msg">${esc(S.log[0] || '')}</div>`;
 }
 const orientMode = () => App.store.get('sa_orient') || 'auto';
-const legacyLayout = () => orientMode() === 'landscape' && !App.zoom;
+/* تنسيق واحد لكل الاتجاهات: اللوحة وحدها على الشاشة وكل المعلومات والقرارات في وسطها */
 function boardView(st) {
-  if (legacyLayout()) return `<div class="boardwrap fit o-land"><div class="binfo">${turnbarHTML(st)}${playersStrip(st)}${decisionView(st)}<div class="row" style="margin:6px 0;align-items:center"><button class="btn sm" id="zoom">تكبير اللوحة</button><span class="muted" style="font-size:12px">المس أي مربع لعرض صك الملكية وتعرفة الإيجار.</span></div></div><div class="bdbox"><div id="bd"></div></div></div>`;
-  return `<div class="boardwrap ${App.zoom ? '' : 'fit'} o-${orientMode()}"><div class="bdbox"><div id="bd"></div></div><button class="btn sm zoomfab" id="zoom">${App.zoom ? 'مقاس الشاشة' : 'تكبير'}</button></div>`;
+  return `<div class="boardwrap fit o-${orientMode()}"><div class="bdbox"><div id="bd"></div></div></div>`;
 }
 function paintBoard(st) {
-  const S = st.s, cur = S.players[S.cur];
-  Board.render($('#bd'), S, legacyLayout()
-    ? `<h1 class="ctitle">سيد العقار</h1><div class="turn"><span class="pawn" style="background:${cur.color}"></span><span>دور ${esc(cur.name)}</span></div>${Board.diceHTML(S)}${Board.centerInfo(S)}<div class="msg">${esc(S.log[0] || '')}</div>`
-    : centerHTMLPhone(st));
+  Board.render($('#bd'), st.s, centerHTMLPhone(st));
   fitBoard();
 }
-/* مقاس الشاشة: اللوحة وبقية العناصر داخل ارتفاع الشاشة تماماً بلا تمرير للصفحة */
+/* اللوحة بمقاس الشاشة تماماً في الوضعين: الأصغر من العرض المتاح والارتفاع المتاح */
 function fitBoard() {
   const wrap = $('.boardwrap'), bd = $('#bd'); if (!wrap || !bd) return;
   const box = bd.parentElement;
-  if (!wrap.classList.contains('fit')) { wrap.style.height = ''; bd.style.width = App.zoom ? '820px' : ''; return; }
   const hdr = $('#hdr'), tabs = $('#tabs');
   const avail = window.innerHeight - (hdr ? hdr.offsetHeight : 0) - (tabs && !tabs.hidden ? tabs.offsetHeight : 0) - 2;
   wrap.style.height = Math.max(190, avail) + 'px';
@@ -260,7 +212,7 @@ function onViewClick(e) {
     App.tradeBusy = true; App.render(); return;
   }
   if (t.closest('#csend')) { sendChat(); return; }
-  if (t.closest('#zoom')) { App.zoom = !App.zoom; App.render(); return; }
+
   const cell = t.closest('#bd .cell');
   if (cell) { const i = +cell.dataset.i; App.modalKey = 'deed'; modal(`<div class="deedwrap" style="max-width:100%">${Board.deedHTML(i, App.st.s)}</div><button class="btn" data-close="1">إغلاق</button>`); }
 }
