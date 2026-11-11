@@ -70,6 +70,8 @@ button,input,select{font-family:inherit}
 .cbtn{min-height:max(38px,10.5cqw);padding:0 3.5cqw;border-radius:2.6cqw;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-weight:700;font-size:max(14px,3.6cqw);cursor:pointer}
 .cbtn.pri{background:var(--accent);color:var(--accent-fg);border-color:transparent}
 .cbtn.dgr{background:var(--bad);color:#fff;border-color:transparent}
+.ckick{margin-top:1cqw;min-height:max(24px,6.5cqw);padding:0 3cqw;border-radius:2cqw;border:1px solid var(--bad);background:transparent;color:var(--bad);font-weight:700;font-size:max(11px,2.9cqw);cursor:pointer}
+.ckick.armed{background:var(--bad);color:#fff}
 .cbtn:disabled{opacity:.4;cursor:not-allowed}
 .cq{font-size:max(12px,2.9cqw);font-weight:700;text-align:center}
 .cq.bad{color:var(--bad)}
