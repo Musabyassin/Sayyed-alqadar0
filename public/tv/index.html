@@ -128,19 +128,45 @@ connectTV();
 /* مغادرة اللعبة من شاشة التلفاز: بنقرتين للتأكيد. التلفاز يفصل عرضه فقط
    (اللعبة تستمر على هواتف اللاعبين)، ثم يفتح غرفة جديدة برمز جديد. */
 let leaveArm = 0;
-document.addEventListener('click', (e) => {
-  const b = e.target.closest('[data-tvleave]'); if (!b) return;
+function triggerLeave() {
+  const b = document.querySelector('[data-tvleave]'); if (!b) return false;
   const now = Date.now();
   if (now - leaveArm > 4000) {
     leaveArm = now; b.classList.add('armed'); b.textContent = 'متأكد؟ اضغط للمغادرة';
     setTimeout(() => { if (Date.now() - leaveArm >= 4000) { b.classList.remove('armed'); b.textContent = '🚪 مغادرة اللعبة'; } }, 4000);
-    return;
+    return true;
   }
   leaveArm = 0; b.classList.remove('armed'); b.textContent = '🚪 مغادرة اللعبة';
   leaving = true; net.close(); store.set('tvRoom', '');
   S = null; lobby = null; code = null; chat = []; canBoard = false; err = null; status = 'connecting';
   draw(); connectTV();
-});
+  return true;
+}
+document.addEventListener('click', (e) => { if (e.target.closest('[data-tvleave]')) triggerLeave(); });
+/* زر الرجوع في ريموت التلفاز (يستدعيه التطبيق): إن بدأت اللعبة ولم تنتهِ
+   يفعّل المغادرة — الضغطة الأولى تسأل، والثانية تنفّذ — وإلا يرجع false
+   فيخرج التطبيق كالمعتاد. */
+window.__tvBack = () => {
+  if (!S || S.over) return false;
+  triggerLeave(); return true;
+};
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && window.__tvBack()) e.preventDefault(); });
+/* تحديث تلقائي: إن تغيّر رقم إصدار الموقع يعيد التلفاز تحميل الصفحة ليظهر
+   أي تحديث دون انتظار إعادة فتح التطبيق (الغرفة تُستأنف تلقائياً). */
+let appVer = null;
+async function checkVersion() {
+  try {
+    const r = await fetch('/version.json', { cache: 'no-store' });
+    const j = await r.json();
+    if (appVer === null) { appVer = j.v; return; }
+    if (j.v !== appVer) {
+      const t = document.createElement('div'); t.className = 'toast'; t.textContent = 'تحديث جديد — جارٍ تحديث الشاشة...'; $('#toasts').appendChild(t);
+      setTimeout(() => location.reload(), 1200);
+    }
+  } catch (e) { /* بلا اتصال: يعيد المحاولة في الجولة التالية */ }
+}
+window.__tvCheckVersion = checkVersion;
+checkVersion(); setInterval(checkVersion, 30000);
 function onEvent(e) {
   if (e.e === 'chat') { chat.push({ id: e.id, n: e.n, m: e.m }); if (chat.length > 50) chat.splice(0, chat.length - 50); draw(); return; }
   if (e.e === 'sfx') Sfx.play(e.n);
