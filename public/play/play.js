@@ -104,4 +104,16 @@ function renderLobby() {
   }
 }
 render();
+/* تحديث تلقائي: إن تغيّر رقم إصدار الموقع يعيد الهاتف تحميل الصفحة ليظهر
+   أي تحديث دون انتظار إعادة فتح التطبيق (الجلسة تُستأنف برمزها المحفوظ). */
+let appVer = null;
+async function checkVersion() {
+  try {
+    const r = await fetch('/version.json', { cache: 'no-store' });
+    const j = await r.json();
+    if (appVer === null) { appVer = j.v; return; }
+    if (j.v !== appVer) { toast('تحديث جديد — جارٍ تحديث الصفحة...'); setTimeout(() => location.reload(), 1200); }
+  } catch (e) { /* بلا اتصال: يعيد المحاولة في الجولة التالية */ }
+}
+checkVersion(); setInterval(checkVersion, 30000);
 })();
