@@ -34,7 +34,9 @@
        عنصر مستقل فوق الشريط والنص (الظل الداخلي كان الشريط يغطيه من جهة)،
        والدائرة الحمراء في وسط المربع ليست شارة مالك بل قطعة اللاعب الواقف عليه. */
     const fr = o !== undefined ? `<span class="ofr" style="border-color:${S.players[o].color}" title="${esc(S.players[o].name)}"></span>` : '';
-    const tks = S.players.filter((p) => !p.bankrupt && p.pos === i).map((p) => `<span class="pawn ${p.id === S.cur ? 'me' : ''} ${p.inJail ? 'jailed' : ''}" style="background:${p.color}"></span>`).join('');
+    /* قطعة اللاعب على اللوحة: سيارة صغيرة بلون اللاعب (SVG ملوّن بلونه). */
+    const carSVG = (p) => `<svg viewBox="0 0 26 14" aria-hidden="true"><path d="M3 11 V7.5 Q3 6 4.5 6 H8 L10 3 Q10.4 2.4 11.2 2.4 H15.6 Q16.4 2.4 16.8 3 L18.6 6 H22 Q23 6 23 7 V11 Q23 11.6 22.4 11.6 H3.6 Q3 11.6 3 11 Z" fill="${p.color}" stroke="rgba(0,0,0,.45)" stroke-width=".7"/><path d="M11.2 3.6 H15.2 L16.4 5.2 H10.6 Z" fill="rgba(255,255,255,.9)"/><circle cx="8" cy="11.4" r="1.9" fill="#1c1c1c" stroke="#fff" stroke-width=".6"/><circle cx="18.5" cy="11.4" r="1.9" fill="#1c1c1c" stroke="#fff" stroke-width=".6"/></svg>`;
+    const tks = S.players.filter((p) => !p.bankrupt && p.pos === i).map((p) => `<span class="pawn ${p.id === S.cur ? 'me' : ''} ${p.inJail ? 'jailed' : ''}" title="${esc(p.name)}">${carSVG(p)}</span>`).join('');
     const extra = i === 20 && S.opt.jackpot && S.pot > 0 ? `<div class="pr">${S.pot}</div>` : '';
     return `<div class="cell s-${pos.s} ${corner ? 'corner' : ''} ${sp ? 'sp' : ''} ${S.mort[i] ? 'mg' : ''}" data-i="${i}" style="grid-row:${pos.r};grid-column:${pos.c};">${band}<div class="body">${inner}${extra}</div>${fr}<div class="tk">${tks}</div></div>`;
   }
