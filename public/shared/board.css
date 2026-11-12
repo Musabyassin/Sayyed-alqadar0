@@ -40,10 +40,10 @@ button,input,select{font-family:inherit}
   .corner .ic{display:block;width:4.4cqw;height:4.4cqw}.corner .nm{font-size:max(8px,2.3cqw)}}
 .cell.mg::after{content:"";position:absolute;inset:0;z-index:2;background:repeating-linear-gradient(135deg,rgba(0,0,0,.45) 0 4px,transparent 4px 8px);pointer-events:none}
 .tk{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:.3cqw;padding:.3cqw;pointer-events:none;z-index:3}
-.tk .pawn{width:3.4cqw;height:1.9cqw;min-width:14px;min-height:8px;background:none;border:none;border-radius:0;box-shadow:none}
+.tk .pawn{width:7cqw;height:3.8cqw;min-width:20px;min-height:11px;background:none;border:none;border-radius:0;box-shadow:none}
 .tk .pawn svg{display:block;width:100%;height:100%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
 /* ثلاثة لاعبين أو أكثر على مربع واحد: سيارات أصغر قليلاً لتتسع */
-.tk:has(> :nth-child(3)) .pawn{width:2.6cqw;height:1.5cqw;min-width:11px;min-height:7px}
+.tk:has(> :nth-child(3)) .pawn{width:4.6cqw;height:2.5cqw;min-width:14px;min-height:8px}
 .tk .pawn.me{animation:pulse 1s infinite}
 .tk .pawn.jailed{outline:2px dashed var(--bad)}
 @keyframes pulse{50%{transform:scale(1.25)}}
