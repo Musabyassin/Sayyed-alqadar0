@@ -29,15 +29,14 @@
     } else if (s.t === 'rail' || s.t === 'util') inner = `${ICON[s.t]}<div class="nm">${s.n}</div><div class="pr">${s.p}</div><div class="rn">${rentText(i, S)}</div>`;
     else if (s.t === 'tax') inner = `${ICON.tax}<div class="nm">${s.n}</div><div class="pr">${s.v}</div>`;
     else inner = `${ICON[s.t]}<div class="nm">${s.n}</div>`;
-    let st = '';
     const o = S.owner[i];
-    /* شارة المالك: قرص بلون اللاعب فقط (بلا حرف) في زاوية المربع، مع إطار
-       سميك بلونه حول المربع كله — واضح من الأريكة ومن الهاتف. */
-    const ow = o !== undefined ? `<span class="ow" style="background:${S.players[o].color}" title="${esc(S.players[o].name)}"></span>` : '';
-    if (o !== undefined) st = `box-shadow:inset 0 0 0 max(3px,.8cqw) ${S.players[o].color};`;
+    /* مالك العقار: إطار صلب بلون اللاعب حول المربع كله فقط — بلا أي دائرة.
+       عنصر مستقل فوق الشريط والنص (الظل الداخلي كان الشريط يغطيه من جهة)،
+       والدائرة الحمراء في وسط المربع ليست شارة مالك بل قطعة اللاعب الواقف عليه. */
+    const fr = o !== undefined ? `<span class="ofr" style="border-color:${S.players[o].color}" title="${esc(S.players[o].name)}"></span>` : '';
     const tks = S.players.filter((p) => !p.bankrupt && p.pos === i).map((p) => `<span class="pawn ${p.id === S.cur ? 'me' : ''} ${p.inJail ? 'jailed' : ''}" style="background:${p.color}"></span>`).join('');
     const extra = i === 20 && S.opt.jackpot && S.pot > 0 ? `<div class="pr">${S.pot}</div>` : '';
-    return `<div class="cell s-${pos.s} ${corner ? 'corner' : ''} ${sp ? 'sp' : ''} ${S.mort[i] ? 'mg' : ''}" data-i="${i}" style="grid-row:${pos.r};grid-column:${pos.c};${st}">${band}<div class="body">${inner}${extra}</div>${ow}<div class="tk">${tks}</div></div>`;
+    return `<div class="cell s-${pos.s} ${corner ? 'corner' : ''} ${sp ? 'sp' : ''} ${S.mort[i] ? 'mg' : ''}" data-i="${i}" style="grid-row:${pos.r};grid-column:${pos.c};">${band}<div class="body">${inner}${extra}</div>${fr}<div class="tk">${tks}</div></div>`;
   }
   /* الإيجار الحالي الذي سيُخصم فعلياً لو وقف خصم على هذا المربع الآن.
      يطابق منطق calcRent في محرك الخادم (ما عدا مضاعفات بطاقات الفرصة المؤقتة).
