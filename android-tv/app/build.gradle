@@ -10,8 +10,8 @@ android {
         applicationId 'com.sayyed.alaqar'
         minSdk 21
         targetSdk 34
-        versionCode 2
-        versionName '1.1'
+        versionCode 3
+        versionName '1.2'
         // عنوان الخادم يُمرَّر عند البناء: gradle assembleDebug -PSERVER_URL=https://example.com
         // وإن تُرك فارغاً يسأل التطبيق عن العنوان عند أول تشغيل.
         buildConfigField 'String', 'SERVER_URL', "\"${project.findProperty('SERVER_URL') ?: ''}\""
