@@ -31,9 +31,9 @@
     else inner = `${ICON[s.t]}<div class="nm">${s.n}</div>`;
     let st = '';
     const o = S.owner[i];
-    /* شارة المالك: قرص بلون اللاعب وأول حرف من اسمه في زاوية المربع، مع إطار
+    /* شارة المالك: قرص بلون اللاعب فقط (بلا حرف) في زاوية المربع، مع إطار
        سميك بلونه حول المربع كله — واضح من الأريكة ومن الهاتف. */
-    const ow = o !== undefined ? `<span class="ow" style="background:${S.players[o].color}" title="${esc(S.players[o].name)}">${esc((S.players[o].name || '').trim()[0] || '')}</span>` : '';
+    const ow = o !== undefined ? `<span class="ow" style="background:${S.players[o].color}" title="${esc(S.players[o].name)}"></span>` : '';
     if (o !== undefined) st = `box-shadow:inset 0 0 0 max(3px,.8cqw) ${S.players[o].color};`;
     const tks = S.players.filter((p) => !p.bankrupt && p.pos === i).map((p) => `<span class="pawn ${p.id === S.cur ? 'me' : ''} ${p.inJail ? 'jailed' : ''}" style="background:${p.color}"></span>`).join('');
     const extra = i === 20 && S.opt.jackpot && S.pot > 0 ? `<div class="pr">${S.pot}</div>` : '';
