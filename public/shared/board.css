@@ -23,16 +23,10 @@ button,input,select{font-family:inherit}
 .s-l .band,.s-r .band{flex-direction:column}
 .hs{width:1.9cqw;height:1.9cqw;min-width:5px;min-height:5px;background:#1fa05a;border:1px solid rgba(0,0,0,.5);border-radius:1px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
 .hs.ht{width:3.8cqw;height:1.9cqw;background:#d6342c}
-/* شارة مالك العقار على المربع: قرص بلونه فقط (بلا حرف) */
-.ow{position:absolute;top:.35cqw;inset-inline-start:.35cqw;z-index:4;width:2.8cqw;height:2.8cqw;min-width:11px;min-height:11px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:max(8px,1.9cqw);line-height:1;border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none}
-/* الشارة فوق شريط المجموعة لا فوق الاسم: الصف العلوي شريطه في الأسفل، والعمود الأيسر شريطه في اليمين.
-   في الصف العلوي تكون الشارة ملاصقة لحافة المربع (1px) فتقع داخل الشريط تماماً ولا تلامس سطر الإيجار
-   (نص الرهن من سطرين يصل حتى أسفل الجسم). والخلية العلوية بلا شريط (قطار النيل) شارتها في الأعلى
-   لأن الأسفل فيها نص الإيجار مباشرة. */
-.s-t .ow{top:auto;bottom:1px}
-.s-t:not(:has(.band)) .ow{top:.35cqw;bottom:auto}
-.s-l .ow{inset-inline-start:auto;inset-inline-end:.35cqw}
-.cell.mg .ow{opacity:.85}
+/* إطار مالك العقار: حدّ صلب بلون اللاعب حول المربع كله، فوق الشريط والنص،
+   بلا أي دائرة — واضح من التلفاز ومن الهاتف */
+.ofr{position:absolute;inset:0;z-index:5;border:max(2px,.7cqw) solid;border-radius:2px;pointer-events:none}
+.cell.mg .ofr{opacity:.85}
 .body{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2cqw;padding:.2cqw;text-align:center;direction:rtl}
 /* أسماء العقارات ظاهرة دائماً على كل مربع، وتصغر مع حجم اللوحة */
 .nm{font-size:max(6.5px,1.85cqw);line-height:1.12;font-weight:600;overflow-wrap:anywhere}
