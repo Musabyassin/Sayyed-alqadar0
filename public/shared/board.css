@@ -21,8 +21,11 @@ button,input,select{font-family:inherit}
 .s-b{flex-direction:column}.s-t{flex-direction:column-reverse}.s-l{flex-direction:row-reverse}.s-r{flex-direction:row}
 .band{flex:0 0 22%;display:flex;align-items:center;justify-content:center;gap:.25cqw}
 .s-l .band,.s-r .band{flex-direction:column}
-.hs{width:1.5cqw;height:1.5cqw;min-width:4px;min-height:4px;background:#1fa05a;border:1px solid rgba(0,0,0,.5);border-radius:1px}
-.hs.ht{width:3cqw;height:1.5cqw;background:#d6342c}
+.hs{width:1.9cqw;height:1.9cqw;min-width:5px;min-height:5px;background:#1fa05a;border:1px solid rgba(0,0,0,.5);border-radius:1px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.hs.ht{width:3.8cqw;height:1.9cqw;background:#d6342c}
+/* شارة مالك العقار على المربع: قرص بلونه وأول حرف من اسمه */
+.ow{position:absolute;top:.35cqw;inset-inline-start:.35cqw;z-index:4;width:2.8cqw;height:2.8cqw;min-width:11px;min-height:11px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:max(8px,1.9cqw);line-height:1;border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none}
+.cell.mg .ow{opacity:.85}
 .body{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2cqw;padding:.2cqw;text-align:center;direction:rtl}
 /* أسماء العقارات ظاهرة دائماً على كل مربع، وتصغر مع حجم اللوحة */
 .nm{font-size:max(6.5px,1.85cqw);line-height:1.12;font-weight:600;overflow-wrap:anywhere}
