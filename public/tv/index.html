@@ -56,6 +56,8 @@ body{font-size:2.1vh;cursor:none}
 #chatbox .clist{display:flex;flex-direction:column;gap:.7vh;overflow:hidden;font-size:1.9vh;line-height:1.45}
 #chatbox .cm b{margin-inline-end:.6vh}
 #chatbox .empty{color:var(--muted)}
+.leaveBtn{cursor:pointer;border:1px solid var(--bad);background:transparent;color:var(--bad);border-radius:1.6vh;padding:1.4vh;font-family:inherit;font-weight:700;font-size:2.2vh}
+.leaveBtn.armed{background:var(--bad);color:#fff}
 .bbtns{display:flex;gap:1.2cqw;flex-wrap:wrap;justify-content:center}
 .bbtn{cursor:pointer;border:0;border-radius:99px;background:var(--accent);color:var(--accent-fg);font-family:inherit;font-weight:700;font-size:max(13px,2.8cqw);padding:1.1cqw 3.4cqw;box-shadow:var(--shadow)}
 .bbtn.end{background:var(--surface2);color:var(--ink);border:2px solid var(--accent)}
@@ -88,6 +90,7 @@ body{font-size:2.1vh;cursor:none}
     <div id="players"></div>
     <div id="log"></div>
     <div id="chatbox"><h3>شات الغرفة</h3><div class="clist" id="clist"><div class="empty">لا رسائل بعد — يكتب اللاعبون من تبويب «شات» في هواتفهم.</div></div></div>
+    <button class="leaveBtn" data-tvleave>🚪 مغادرة اللعبة</button>
   </aside>
 </section>
 <div id="toasts"></div>
@@ -102,12 +105,14 @@ body{font-size:2.1vh;cursor:none}
 const $ = (s) => document.querySelector(s), esc = Board.esc, GC = GameData.GC, SQ = GameData.SQ, COLORS = GameData.COLORS;
 const params = new URLSearchParams(location.search), watchCode = params.get('c');
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } } };
-let S = null, lobby = null, code = null, status = 'connecting', err = null, raf = 0, chat = [], canBoard = false;
+let S = null, lobby = null, code = null, status = 'connecting', err = null, raf = 0, chat = [], canBoard = false, leaving = false;
 const joinHost = location.host + '/play';
 
-const net = Net.connect({
+let net;
+function connectTV() {
+  net = Net.connect({
   onOpen() { err = null; if (watchCode) net.send({ t: 'watch', code: watchCode }); else net.send({ t: 'create', role: 'tv', resume: store.get('tvRoom') || undefined }); },
-  onStatus(s) { status = s; draw(); },
+  onStatus(s) { if (leaving && s !== 'open') return; if (s === 'open') leaving = false; status = s; draw(); },
   onMsg(m) {
     if (m.t === 'created') { code = m.code; if (!watchCode) store.set('tvRoom', code); }
     else if (m.t === 'lobby') { lobby = m; S = null; code = m.code; }
@@ -117,6 +122,24 @@ const net = Net.connect({
     else if (m.t === 'err') { err = m.m; if (m.fatal) store.set('tvRoom', ''); }
     draw();
   },
+  });
+}
+connectTV();
+/* مغادرة اللعبة من شاشة التلفاز: بنقرتين للتأكيد. التلفاز يفصل عرضه فقط
+   (اللعبة تستمر على هواتف اللاعبين)، ثم يفتح غرفة جديدة برمز جديد. */
+let leaveArm = 0;
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-tvleave]'); if (!b) return;
+  const now = Date.now();
+  if (now - leaveArm > 4000) {
+    leaveArm = now; b.classList.add('armed'); b.textContent = 'متأكد؟ اضغط للمغادرة';
+    setTimeout(() => { if (Date.now() - leaveArm >= 4000) { b.classList.remove('armed'); b.textContent = '🚪 مغادرة اللعبة'; } }, 4000);
+    return;
+  }
+  leaveArm = 0; b.classList.remove('armed'); b.textContent = '🚪 مغادرة اللعبة';
+  leaving = true; net.close(); store.set('tvRoom', '');
+  S = null; lobby = null; code = null; chat = []; canBoard = false; err = null; status = 'connecting';
+  draw(); connectTV();
 });
 function onEvent(e) {
   if (e.e === 'chat') { chat.push({ id: e.id, n: e.n, m: e.m }); if (chat.length > 50) chat.splice(0, chat.length - 50); draw(); return; }
