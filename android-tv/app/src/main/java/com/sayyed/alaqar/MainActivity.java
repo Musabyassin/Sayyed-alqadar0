@@ -47,12 +47,13 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#0B1220"));
         setContentView(web);
+        web.clearCache(true); // كل فتح للتطبيق يبدأ بصفحة طازجة دون نسخ محفوظة قديمة
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false); // لتشغيل المؤثرات الصوتية دون لمس
-        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE); // لا ذاكرة محفوظة: التحديثات تظهر فوراً
         s.setTextZoom(100);
 
         web.setWebViewClient(new WebViewClient() {
@@ -125,10 +126,16 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        long now = System.currentTimeMillis();
-        if (now - lastBack < 2000) { super.onBackPressed(); return; }
-        lastBack = now;
-        Toast.makeText(this, "اضغط رجوع مرة أخرى للخروج", Toast.LENGTH_SHORT).show();
+        // زر الرجوع في الريموت: تسأل الصفحة أولاً؛ إن بدأت اللعبة ولم تنتهِ
+        // تعرض الصفحة سؤال المغادرة (الضغطة الأولى تسأل، والثانية تنفّذ)،
+        // وإلا يبقى السلوك القديم: ضغطتان للخروج من التطبيق.
+        web.evaluateJavascript("(function(){try{return window.__tvBack ? !!window.__tvBack() : false;}catch(e){return false;}})()", value -> {
+            if ("true".equals(value)) return; // الصفحة تولّت الأمر
+            long now = System.currentTimeMillis();
+            if (now - lastBack < 2000) { MainActivity.super.onBackPressed(); return; }
+            lastBack = now;
+            Toast.makeText(MainActivity.this, "اضغط رجوع مرة أخرى للخروج", Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
