@@ -9,6 +9,9 @@ const QRCode = require('qrcode');
 const { Game } = require('./engine.js');
 
 const PORT = Number(process.env.PORT) || 3000;
+/* كلمة سر ثانية للشات: تُقرأ من متغير بيئة الاستضافة فقط، ولا تظهر أبداً
+   في هذا الملف أو في أي ملف بالمستودع. إن لم يُضبط المتغير تبقى معطّلة. */
+const SECRET_WORD2 = (process.env.SECRET_CHAT_WORD2 || '').trim();
 const PUBLIC = path.join(__dirname, '..', 'public');
 const MAX_ROOMS = 300;
 const AUTO_DELAY = Number(process.env.AUTO_DELAY) || 20000, AUTO_FAST = Number(process.env.AUTO_FAST) || 2500;
@@ -258,6 +261,16 @@ wss.on('connection', (ws, req) => {
           let added = false;
           if (gg && room.phase === 'playing') { const p = gg.S.players[idx]; if (p && !p.bankrupt) { p.money += 500; added = true; schedule(room); } }
           send(ws, { t: 'ev', e: { e: 'toast', m: added ? '🌿 +500 لك' : '🌿 تعمل أثناء اللعبة فقط' } });
+          return;
+        }
+        /* كلمة السر الثانية (من متغير البيئة): كتابتها وحدها لا تظهر لأحد
+           (لا بث ولا سجل)، وتضيف 100 لكاتبها فقط أثناء اللعبة، مع تنبيه
+           خاص يصله وحده. داخل جملةٍ تُعامل كرسالة عادية. */
+        if (SECRET_WORD2 && String(msg.m || '').trim() === SECRET_WORD2) {
+          const idx = room.members.indexOf(m), gg = room.game;
+          let added = false;
+          if (gg && room.phase === 'playing') { const p = gg.S.players[idx]; if (p && !p.bankrupt) { p.money += 100; added = true; schedule(room); } }
+          send(ws, { t: 'ev', e: { e: 'toast', m: added ? '✨ +100 لك' : '✨ تعمل أثناء اللعبة فقط' } });
           return;
         }
         const text = String(msg.m || '').replace(/\s+/g, ' ').trim().slice(0, 300);
