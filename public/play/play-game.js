@@ -141,7 +141,8 @@ function settingsView(st) {
     <label><input type="checkbox" id="set-shake" ${shk ? 'checked' : ''}> رمي النرد بهزّ الهاتف — هزّ هاتفك عندما يحين رميك</label>
   </div>
   <label class="f">اتجاه عرض شاشة اللوحة<select id="set-orient">${[['auto', 'تلقائي (حسب وضع الجهاز)'], ['portrait', 'عمودي Portrait'], ['landscape', 'أفقي Landscape']].map(([v, l]) => `<option value="${v}" ${(App.store.get('sa_orient') || 'auto') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-  ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="slow" ${spd === 'slow' ? 'selected' : ''}>بطيئة</option><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة يضبطها المضيف من إعداداته.</div>'}
+  ${st.host ? `<label class="f">سرعة اللعبة (أنت المضيف — تنطبق على الجميع فوراً)<select id="set-speed"><option value="slow" ${spd === 'slow' ? 'selected' : ''}>بطيئة</option><option value="normal" ${spd === 'normal' ? 'selected' : ''}>عادية</option><option value="fast" ${spd === 'fast' ? 'selected' : ''}>سريعة</option><option value="turbo" ${spd === 'turbo' ? 'selected' : ''}>خاطفة (بدون انتظار)</option></select></label>
+  <label><input type="checkbox" id="set-green" ${st.greenBg ? 'checked' : ''}> 🌿 خلفية خضراء فاتحة — للعبة كاملة وعلى كل الشاشات (أنت المضيف)</label>` : '<div class="muted" style="font-size:13px">سرعة اللعبة وخلفية اللعبة يضبطهما المضيف من إعداداته.</div>'}
   <div class="muted" style="font-size:13px">الرصيد الابتدائي وجائزة الوقوف المجاني يضبطهما المضيف من الردهة قبل بدء اللعبة.</div>
   <div class="muted">غرفة <bdi dir="ltr">${esc(st.code)}</bdi></div>
   <button class="btn danger" data-leave="1">مغادرة الغرفة</button></div>`;
@@ -266,6 +267,7 @@ function onViewChange(e) {
     return;
   }
   if (t.id === 'set-speed') { App.speedV = t.value; App.store.set('sa_speed', t.value); send({ t: 'speed', v: t.value }); return; }
+  if (t.id === 'set-green') { App.store.set('sa_green', t.checked ? '1' : '0'); send({ t: 'theme', green: t.checked }); return; }
   if (t.id === 'set-orient') { App.store.set('sa_orient', t.value); App.render(); return; }
   if (t.id === 'tto') { tf.to = +t.value; tf.get.clear(); if (App.counterCtx && App.counterCtx.from !== tf.to) App.counterCtx = null; App.render(); }
   else if (t.dataset.give !== undefined) { (t.checked ? tf.give.add(+t.dataset.give) : tf.give.delete(+t.dataset.give)); }
