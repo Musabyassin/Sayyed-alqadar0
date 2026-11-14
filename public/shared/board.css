@@ -106,3 +106,6 @@ body.green{
   --good:#1f9d55;--bad:#ff6b5b;--die:#ffffff;--pip:#14213d;--shadow:0 8px 28px rgba(20,60,25,.28);
   color-scheme:light;
 }
+
+/* شارة عدد العقارات لكل لاعب: تظهر في بطاقات اللاعبين (هاتف وتلفاز) */
+.pcount{display:inline-flex;align-items:center;gap:.25em;background:var(--surface2);border:1px solid var(--line);border-radius:99px;padding:.05em .55em;font-size:.82em;font-weight:700;white-space:nowrap;flex:none}
