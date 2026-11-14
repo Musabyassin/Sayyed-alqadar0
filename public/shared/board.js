@@ -70,7 +70,7 @@
   const diceHTML = (S) => `<div class="dice">${S.rolling ? die(1 + Math.floor(Math.random() * 6), true) + die(1 + Math.floor(Math.random() * 6), true) : die(S.dice[0]) + die(S.dice[1])}</div>`;
 
   /* لوحة المعلومات في وسط اللوحة: رقائق بكل لاعب — لونه واسمه ونقوده وعدد عقاراته */
-  const centerInfo = (S) => `<div class="cinfo">${S.players.map((p) => { const n = Object.keys(S.owner).filter((i) => S.owner[i] === p.id).length; return `<span class="chip2 ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}<b>${p.bankrupt ? 'مفلس' : Number(p.money).toLocaleString('en-US')}</b><small>${n} عقار</small></span>`; }).join('')}</div>`;
+  const centerInfo = (S) => `<div class="cinfo">${S.players.map((p) => { const n = Object.keys(S.owner).filter((i) => S.owner[i] === p.id).length; return `<span class="chip2 ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><span class="pawn" style="background:${p.color}"></span>${esc(p.name)}<b>${p.bankrupt ? 'مفلس' : Number(p.money).toLocaleString('en-US')}</b><small>🏠 ${n}</small></span>`; }).join('')}</div>`;
 
   /* يرسم اللوحة كاملة داخل el، والوسط من centerHTML */
   function render(el, S, centerHTML) {
