@@ -17,8 +17,8 @@ function toast(m) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; const box = $('#toasts'); box.appendChild(t);
   while (box.children.length > 2) box.firstChild.remove(); setTimeout(() => t.remove(), 2600);
 }
-function modal(html) { const m = $('#modal'); m.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; }
-function closeModal() { const m = $('#modal'); m.hidden = true; m.innerHTML = ''; App.modalKey = null; }
+function modal(html, cls) { const m = $('#modal'); m.className = 'overlay' + (cls ? ' ' + cls : ''); m.innerHTML = `<div class="sheet${cls ? ' ' + cls : ''}" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; }
+function closeModal() { const m = $('#modal'); m.hidden = true; m.innerHTML = ''; m.className = 'overlay'; App.modalKey = null; }
 Object.assign(App, { send, toast, modal, closeModal });
 
 const net = Net.connect({
