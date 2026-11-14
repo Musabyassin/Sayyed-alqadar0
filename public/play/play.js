@@ -52,6 +52,9 @@ function render() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint
 App.render = render;
 function paint() {
   const inGame = !!App.st, inLobby = !!App.lobby;
+  /* خلفية اللعبة: خضراء فاتحة إن فعّلها المضيف، وتعود داكنة بلا غرفة */
+  const green = (inGame && App.st.greenBg) || (inLobby && App.lobby.cfg && App.lobby.cfg.greenBg);
+  document.body.classList.toggle('green', !!green);
   $('#tabs').hidden = !inGame;
   if (inGame && App.renderGame) App.renderGame();
   else if (inLobby) renderLobby();
@@ -75,7 +78,7 @@ function renderJoin() {
     if (!name()) return toast('اكتب اسمك أولاً');
     store.set('sa_name', name()); send({ t: 'join', code, name: name() });
   };
-  $('#create').onclick = () => { if (!name()) return toast('اكتب اسمك أولاً'); store.set('sa_name', name()); send({ t: 'create', role: 'phone', name: name() }); };
+  $('#create').onclick = () => { if (!name()) return toast('اكتب اسمك أولاً'); store.set('sa_name', name()); send({ t: 'create', role: 'phone', name: name() }); if (store.get('sa_green') === '1') send({ t: 'theme', green: true }); };
   $('#code').oninput = (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); if (e.target.value.length === 4 && name()) $('#join').focus(); };
 }
 
@@ -87,7 +90,7 @@ function renderLobby() {
     <input type="text" id="link" readonly value="${esc(link)}" dir="ltr" style="font-size:13px;height:42px"><button class="btn sm" id="copy" style="width:100%">نسخ رابط الدعوة</button></div>
     <div class="card"><b>اللاعبون (${L.players.length} من 6)</b><div class="plist">${L.players.map((p) => `<div class="pitem"><span class="pawn" style="background:${COLORS[p.id]}"></span>${esc(p.name)}${p.id === L.me ? ' (أنت)' : ''}<small>${p.bot ? 'آلي' : p.host ? 'المضيف' : p.connected ? '' : 'غير متصل'}</small>${host && p.id !== L.me ? `<button class="btn sm" data-kick="${p.id}" aria-label="إزالة ${esc(p.name)}">إزالة</button>` : ''}</div>`).join('')}</div>
     ${host ? `<button class="btn" id="bot" ${full ? 'disabled' : ''}>إضافة لاعب آلي</button>
-      <div class="opts"><label>الرصيد الابتدائي <select id="cash">${[1000, 1500, 2000, 3000].map((v) => `<option ${v === L.cfg.cash ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label>سرعة اللعبة <select id="spd">${[['slow', 'بطيئة'], ['normal', 'عادية'], ['fast', 'سريعة'], ['turbo', 'خاطفة']].map(([v, l]) => `<option value="${v}" ${v === App.speedV ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label><input type="checkbox" id="jack" ${L.cfg.jackpot ? 'checked' : ''}> جائزة الوقوف المجاني</label></div>
+      <div class="opts"><label>الرصيد الابتدائي <select id="cash">${[1000, 1500, 2000, 3000].map((v) => `<option ${v === L.cfg.cash ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label>سرعة اللعبة <select id="spd">${[['slow', 'بطيئة'], ['normal', 'عادية'], ['fast', 'سريعة'], ['turbo', 'خاطفة']].map(([v, l]) => `<option value="${v}" ${v === App.speedV ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label><input type="checkbox" id="jack" ${L.cfg.jackpot ? 'checked' : ''}> جائزة الوقوف المجاني</label><label><input type="checkbox" id="green" ${L.cfg.greenBg ? 'checked' : ''}> 🌿 خلفية خضراء فاتحة</label></div>
       <button class="btn primary" id="start" ${L.players.length < 2 ? 'disabled' : ''}>ابدأ اللعبة</button>
       ${L.players.length < 2 ? '<span class="muted">يلزم لاعبان على الأقل. أضف لاعباً آلياً أو انتظر صديقاً.</span>' : ''}`
     : '<div class="muted" style="text-align:center;padding:8px">بانتظار المضيف ليبدأ اللعبة...</div>'}</div>
@@ -101,6 +104,7 @@ function renderLobby() {
     const cfg = () => send({ t: 'cfg', cash: +$('#cash').value, jackpot: $('#jack').checked });
     $('#cash').onchange = cfg; $('#jack').onchange = cfg;
     $('#spd').onchange = () => { App.speedV = $('#spd').value; store.set('sa_speed', App.speedV); send({ t: 'speed', v: App.speedV }); };
+    $('#green').onchange = () => { store.set('sa_green', $('#green').checked ? '1' : '0'); send({ t: 'theme', green: $('#green').checked }); };
   }
 }
 render();
