@@ -53,7 +53,7 @@ class Game {
     if (p.money < s.h) return false;
     return h < 4 ? this.S.houseBank > 0 : this.S.hotelBank > 0;
   }
-  build(p, i) { const s = SQ[i], h = this.hs(i); p.money -= s.h; if (h < 4) this.S.houseBank--; else { this.S.hotelBank--; this.S.houseBank += 4; } this.S.houses[i] = h + 1; this.sfx('buy'); }
+  build(p, i) { const s = SQ[i], h = this.hs(i); p.money -= s.h; if (h < 4) this.S.houseBank--; else { this.S.hotelBank--; this.S.houseBank += 4; } this.S.houses[i] = h + 1; this.sfx('build'); }
   canSell(p, i) { const s = SQ[i]; if (s.t !== 'prop' || this.S.owner[i] !== p.id) return false; const h = this.hs(i); return h > 0 && !grp(s.g).some((j) => this.hs(j) > h); }
   sell(p, i) {
     const s = SQ[i], h = this.hs(i);
@@ -191,7 +191,7 @@ class Game {
     ag.forEach((i) => { this.S.owner[i] = b.id; b.money -= fee(i); });
     bg.forEach((i) => { this.S.owner[i] = a.id; a.money -= fee(i); });
     a.money += bc - ac; b.money += ac - bc;
-    this.sfx('buy'); this.log(`صفقة بين ${a.name} و${b.name}`); this.toast('تمت الصفقة');
+    this.sfx('trade'); this.log(`صفقة بين ${a.name} و${b.name}`); this.toast('تمت الصفقة');
   }
   /* يعيد {ok, why}. المفاوضة: إذا ردّ الطرف الآخر بعرض مضاد تنعكس الأدوار
      وتُعرض الشروط الجديدة على الطرف الأول، وقد تتكرر الجولات حتى قبول أو رفض. */
@@ -219,14 +219,14 @@ class Game {
       }
       if (this.dead) return { ok: false, why: 'انتهت اللعبة' };
       if (ok) { err = this.tradeCheck(from, to, cg, ck, cc, cr); if (err) return { ok: false, why: err }; this.execTrade(from, to, cg, ck, cc, cr); this.sync(); return { ok: true, why: null }; }
-      this.log(`${to.name} رفض صفقة ${from.name}`);
+      this.log(`${to.name} رفض صفقة ${from.name}`); this.sfx('deny');
       this.sync();
       return { ok: false, why: 'رفض ' + to.name + ' الصفقة' };
     }
   }
 
   /* ---------- سير اللعب ---------- */
-  async animateDice(d) { this.S.rolling = true; this.sfx('roll'); this.sync(); await this.sleep(700); this.S.dice = d; this.S.rolling = false; this.sync(); }
+  async animateDice(d) { this.S.rolling = true; this.sfx('roll'); this.sync(); await this.sleep(700); this.S.dice = d; this.sfx('land'); this.S.rolling = false; this.sync(); }
   async rollFor(p, skipAsk) {
     if (!skipAsk) await this.ask(p, { kind: 'roll' }); else if (p.bot) await this.sleep(400);
     const d = [rnd6(), rnd6()];
@@ -237,7 +237,7 @@ class Game {
   async stepForward(p, n, delay = 130) {
     for (let i = 0; i < n; i++) {
       p.pos = (p.pos + 1) % 40;
-      if (p.pos === 0) { p.money += 200; this.sfx('cash'); this.toast(`${p.name} مرّ بالانطلاق: +200`); this.log(`${p.name} استلم 200 من الانطلاق`); } else this.sfx('step');
+      if (p.pos === 0) { p.money += 200; this.sfx('go'); this.toast(`${p.name} مرّ بالانطلاق: +200`); this.log(`${p.name} استلم 200 من الانطلاق`); } else this.sfx('step');
       this.sync(); await this.sleep(delay);
     }
   }
@@ -270,7 +270,7 @@ class Game {
     if (to) { to.money += p.money; props.forEach((i) => { this.S.owner[i] = to.id; }); }
     else props.forEach((i) => { delete this.S.owner[i]; this.S.mort[i] = false; });
     p.money = 0; p.bankrupt = true;
-    if (!silent) { this.log(`${p.name} أعلن إفلاسه${to ? ` لصالح ${to.name}` : ''}`); this.sfx('jail'); this.toast(`${p.name} أفلس`); }
+    if (!silent) { this.log(`${p.name} أعلن إفلاسه${to ? ` لصالح ${to.name}` : ''}`); this.sfx('bankrupt'); this.toast(`${p.name} أفلس`); }
     this.checkWin(); this.sync(); await this.sleep(1500);
   }
 
@@ -345,7 +345,7 @@ class Game {
     const deck = this[type + 'Deck'], c = deck.shift();
     if (c.k === 'jailcard') p.jailCards.push({ type, card: c }); else deck.push(c);
     this.log(`${p.name} سحب بطاقة: ${c.t}`);
-    this.S.focus = { k: 'card', type, text: c.t, pid: p.id }; this.sync();
+    this.S.focus = { k: 'card', type, text: c.t, pid: p.id }; this.sfx('card'); this.sync();
     await this.sleep(3200);
     this.S.focus = null; this.sync();
     await this.applyCard(p, c);
@@ -401,7 +401,7 @@ class Game {
   }
 
   async run() {
-    const S = this.S; this.log('بدأت اللعبة'); this.sync();
+    const S = this.S; this.log('بدأت اللعبة'); this.sfx('start'); this.sync();
     while (!this.dead && !S.over) {
       const p = this.cur;
       if (!p.bankrupt) await this.takeTurn(p);
