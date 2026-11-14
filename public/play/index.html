@@ -85,6 +85,12 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 .overlay{position:fixed;inset:0;z-index:50;background:rgba(5,10,20,.75);display:flex;align-items:center;justify-content:center;padding:16px}
 .sheet{width:min(460px,100%);max-height:90vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:12px;box-shadow:var(--shadow)}
 .sheet h2{font-family:var(--f-display);color:var(--accent)}
+/* نافذة الصفقة الواردة: شيت صغير أسفل الشاشة بتعتيم خفيف، فتبقى اللوحة
+   وكل العقارات ظاهرة فوقها أثناء قراءة العرض واتخاذ القرار. */
+.overlay.trade{background:rgba(5,10,20,.30);align-items:flex-end;padding:0 0 calc(10px + env(safe-area-inset-bottom,0px))}
+.sheet.trade{width:min(420px,94%);max-height:46vh;padding:12px;gap:8px}
+.sheet.trade h2{font-size:17px}
+.sheet.trade .card{font-size:14px}
 #toasts{position:fixed;inset-inline:0;top:calc(70px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
 .toast{background:var(--accent);color:var(--accent-fg);padding:8px 16px;border-radius:99px;font-size:14px;font-weight:700;box-shadow:var(--shadow);max-width:92vw}
 #conn{position:fixed;top:0;inset-inline:0;z-index:70;background:var(--bad);color:#fff;text-align:center;padding:calc(6px + env(safe-area-inset-top,0px)) 8px 6px;font-size:13px;font-weight:600}
@@ -132,7 +138,7 @@ label.f{display:grid;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
 <script src="../shared/data.js"></script>
 <script src="../shared/board.js?v=19"></script>
 <script src="../shared/net.js"></script>
-<script src="play.js"></script>
-<script src="play-game.js"></script>
+<script src="play.js?v=22"></script>
+<script src="play-game.js?v=22"></script>
 </body>
 </html>
