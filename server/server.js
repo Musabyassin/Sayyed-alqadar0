@@ -55,7 +55,7 @@ function newCode() { for (let i = 0; i < 50; i++) { const c = String(1000 + Math
 function newRoom() {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = newCode(); if (!code) return null;
-  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1.6 }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map(), rejoin: null };
+  const room = { code, phase: 'lobby', members: [], displays: new Set(), hostDisplays: new Set(), cfg: { cash: 1500, jackpot: false, speed: 1.6, greenBg: false }, game: null, last: Date.now(), trade: null, timers: new Map(), bcast: null, chat: [], chatAt: new Map(), rejoin: null };
   rooms.set(code, room); return room;
 }
 const send = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
@@ -68,7 +68,7 @@ function lobbyMsg(room) {
 function stateFor(room, m) {
   const g = room.game, snap = g.snapshot();
   snap.players.forEach((p, i) => { const mm = room.members[i]; p.connected = mm.bot || !!mm.ws; p.host = !!mm.host; });
-  const out = { t: 'state', s: snap, code: room.code, tv: room.displays.size };
+  const out = { t: 'state', s: snap, code: room.code, tv: room.displays.size, greenBg: room.cfg.greenBg };
   if (m) {
     const p = g.S.players[room.members.indexOf(m)];
     out.me = p.id; out.host = !!m.host;
@@ -285,6 +285,7 @@ wss.on('connection', (ws, req) => {
       }
       case 'cfg': if (m.host && room.phase === 'lobby') { room.cfg.cash = [1000, 1500, 2000, 3000].includes(msg.cash) ? msg.cash : 1500; room.cfg.jackpot = !!msg.jackpot; broadcast(room); } return;
       case 'speed': if (m.host) { room.cfg.speed = msg.v === 'slow' ? 2.6 : msg.v === 'fast' ? 0.8 : msg.v === 'turbo' ? 0 : 1.6; if (g) g.speed = room.cfg.speed; broadcast(room); } return;
+      case 'theme': if (m.host) { room.cfg.greenBg = !!msg.green; broadcast(room); } return;
       case 'addBot': if (m.host && room.phase === 'lobby' && room.members.length < 6) { const used = new Set(room.members.map((x) => x.name)); const nm = NAMES.find((x) => !used.has(x)) || 'آلي ' + room.members.length; room.members.push({ name: nm, bot: true, ws: null }); broadcast(room); } return;
       case 'kick': if (m.host) { const t = room.members[Number(msg.id)]; if (t && t !== m) { if (room.phase === 'lobby') { room.members.splice(room.members.indexOf(t), 1); if (t.ws) { send(t.ws, { t: 'kicked' }); t.ws.room = null; t.ws.member = null; } broadcast(room); } else if (!t.out) kickFromGame(room, t, 'kick'); } } return;
       case 'rejoinReply': {
