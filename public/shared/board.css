@@ -97,3 +97,12 @@ button,input,select{font-family:inherit}
 .rt{width:100%;border-collapse:collapse;font-size:max(10px,1.8cqw);font-variant-numeric:tabular-nums}
 .rt td{padding:.35cqw 1.4cqw;border-top:1px solid var(--line);text-align:right}.rt td:last-child{text-align:left;font-weight:700}
 .deed .dn{padding:.8cqw 1.2cqw;font-size:max(9px,1.6cqw);color:var(--muted);border-top:1px solid var(--line)}
+
+/* الخلفية الخضراء الفاتحة: تُفعَّل بإضافة class="green" على body، فتغطي
+   اللعبة كاملة (الصفحة واللوحة والبطاقات والتبويبات) في الهاتف والتلفاز. */
+body.green{
+  --bg:#cfeecf;--surface:#e9f8e9;--surface2:#d5f0da;--ink:#16301c;--muted:#4c6f52;--line:#a4cfa9;
+  --accent:#e2b24f;--accent-fg:#1a1405;--board:#b7e2bc;--cell:#eefaf0;--center:#d9f2dd;
+  --good:#1f9d55;--bad:#ff6b5b;--die:#ffffff;--pip:#14213d;--shadow:0 8px 28px rgba(20,60,25,.28);
+  color-scheme:light;
+}
