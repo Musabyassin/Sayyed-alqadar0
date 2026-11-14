@@ -33,7 +33,7 @@ const net = Net.connect({
     else if (m.t === 'state') {
       App.st = m; App.lobby = null; App.me = m.me === undefined ? null : m.me; App.spectator = !!m.spectator; App.pendingRejoin = !!m.pending;
       const seq = m.prompt ? m.prompt.seq : null;
-      if (seq && seq !== App.lastSeq) { try { if (store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
+      if (seq && seq !== App.lastSeq) { Sfx.play('turn'); try { if (store.get('sa_vib') !== '0') navigator.vibrate && navigator.vibrate(m.prompt.kind === 'roll' ? [120, 60, 120] : 90); } catch (e) { /* ignore */ } }
       App.lastSeq = seq;
     }
     else if (m.t === 'chatHist') { App.chat = Array.isArray(m.list) ? m.list.slice(-50) : []; if (App.st) render(); return; }
