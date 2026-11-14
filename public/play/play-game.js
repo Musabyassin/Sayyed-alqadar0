@@ -83,7 +83,7 @@ function tradeView(st) {
 function centerCardsHTML(st) {
   const S = st.s;
   const propName = (i) => { const h = S.houses[i] || 0; return `${esc(SQ[i].n)}${S.mort[i] ? ' (مرهون)' : h === 5 ? ' (فندق)' : h ? ` (${h})` : ''}`; };
-  return `<div class="ccards">${S.players.map((p) => { const own = ownedOf(S, p.id); const kick = st.host && st.me != null && p.id !== st.me && !p.bankrupt && !S.over ? `<button class="ckick ${App.kickArm === p.id ? 'armed' : ''}" data-kick="${p.id}">${App.kickArm === p.id ? 'متأكد؟ اضغط للطرد' : 'طرد'}</button>` : ''; return `<div class="ccard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="money">${p.bankrupt ? 'مفلس' : fmt(p.money)}</span></div><div class="pn">${own.length ? own.map(propName).join('، ') : 'لا عقارات بعد'}</div>${kick}</div>`; }).join('')}</div>`;
+  return `<div class="ccards">${S.players.map((p) => { const own = ownedOf(S, p.id); const kick = st.host && st.me != null && p.id !== st.me && !p.bankrupt && !S.over ? `<button class="ckick ${App.kickArm === p.id ? 'armed' : ''}" data-kick="${p.id}">${App.kickArm === p.id ? 'متأكد؟ اضغط للطرد' : 'طرد'}</button>` : ''; return `<div class="ccard ${p.id === S.cur && !p.bankrupt ? 'cur' : ''} ${p.bankrupt ? 'bk' : ''}"><div class="ph"><span class="pawn" style="background:${p.color}"></span><span class="pname">${esc(p.name)}${p.id === st.me ? ' (أنت)' : ''}${p.inJail ? ' · سجن' : ''}</span><span class="pcount">🏠 ${own.length}</span><span class="money">${p.bankrupt ? 'مفلس' : fmt(p.money)}</span></div><div class="pn">${own.length ? own.map(propName).join('، ') : 'لا عقارات بعد'}</div>${kick}</div>`; }).join('')}</div>`;
 }
 function centerDecisionHTML(st) {
   const S = st.s, me = S.players[st.me], p = st.prompt;
@@ -187,7 +187,7 @@ App.renderGame = function renderGame() {
   const v = $('#view'), ae = document.activeElement;
   const typing = ae && v.contains(ae) && ((tab === 'trade' && (ae.tagName === 'INPUT' && ae.type !== 'checkbox' || ae.tagName === 'SELECT')) || (tab === 'chat' && ae.id === 'cin'));
   if (!typing) {
-    if (tab === 'props') v.innerHTML = `<div class="card"><b>أملاكي</b>${propsHTML(st, true)}</div>`;
+    if (tab === 'props') v.innerHTML = `<div class="card"><b>أملاكي · 🏠 ${st.manage.length}</b>${propsHTML(st, true)}</div>`;
     else if (tab === 'trade') v.innerHTML = tradeView(st);
     else if (tab === 'gear') v.innerHTML = settingsView(st);
     else if (tab === 'chat') { v.innerHTML = chatView(st); const box = $('#cmsg'); if (box) box.scrollTop = box.scrollHeight; }
