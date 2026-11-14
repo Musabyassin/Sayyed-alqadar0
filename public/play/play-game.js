@@ -202,7 +202,7 @@ App.renderGame = function renderGame() {
     const key = 'tin' + JSON.stringify(inc);
     if (App.modalKey !== key && App.tradeDismiss !== key) {
       App.modalKey = key; const from = S.players[inc.from];
-      modal(`<h2>${inc.counter ? 'عرض مضاد' : 'عرض صفقة'} من ${esc(from.name)}</h2><div class="card" style="margin:0"><div><b>يعطيك:</b> ${esc(names(inc.give))}${inc.gc ? ` + ${fmt(inc.gc)} نقداً` : ''}</div><div><b>ويأخذ منك:</b> ${esc(names(inc.get))}${inc.rc ? ` + ${fmt(inc.rc)} نقداً` : ''}</div></div><div class="row"><button class="btn" data-tr="0">ارفض</button><button class="btn" data-tr="2">🤝 مفاوضة</button><button class="btn primary" data-tr="1">اقبل</button></div>`);
+      modal(`<h2>${inc.counter ? 'عرض مضاد' : 'عرض صفقة'} من ${esc(from.name)}</h2><div class="card" style="margin:0"><div><b>يعطيك:</b> ${esc(names(inc.give))}${inc.gc ? ` + ${fmt(inc.gc)} نقداً` : ''}</div><div><b>ويأخذ منك:</b> ${esc(names(inc.get))}${inc.rc ? ` + ${fmt(inc.rc)} نقداً` : ''}</div></div><div class="row"><button class="btn" data-tr="0">ارفض</button><button class="btn" data-tr="2">🤝 مفاوضة</button><button class="btn primary" data-tr="1">اقبل</button></div>`, 'trade');
     }
   } else if (App.modalKey && App.modalKey.startsWith('tin')) closeModal();
   /* طلب عودة لاعب خرج من اللعبة: قرار المضيف (لا يزاحم نافذة صفقة مفتوحة) */
